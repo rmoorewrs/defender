@@ -5,15 +5,31 @@ app = Flask(__name__)
 api = Api(app)
 
 # based on example from https://medium.com/duomly-blockchain-online-courses/how-to-create-a-simple-rest-api-with-python-and-flask-in-5-minutes-94bb88f74a23
+# to exercise with curl:
+#       Get a list of objects
+#       $ curl http://127.0.0.1:5000/objects/
+#
+#       Get a specific object
+#       $ curl http://127.0.0.1:5000/objects/3
+#
+#       add an object with POST
+#       $ curl -d "uuid=0006&type=defender&x=100&y=100" -X POST http://127.0.0.1:5000/objects/
+#
+#       update an object with PUT
+#       $ curl -d "x=200" -X PUT http://127.0.0.1:5000/objects/6
+#
+#       delete an object with DELETE
+#       $ curl -X DELETE http://127.0.0.1:5000/objects/6
+
 
 # initial list of world model objects
 WMObjects = {
     '1': {'uuid': '0001', 'type': 'attacker', 'x': 10, 'y': 10},
-    '2': {'uuid': '0001', 'type': 'attacker', 'x': 10, 'y': 20},
-    '3': {'uuid': '0002', 'type': 'defender', 'x': 20, 'y': 10},
-    '4': {'uuid': '0003', 'type': 'defender', 'x': 30, 'y': 10},
-    '5': {'uuid': '0004', 'type': 'target', 'x': 40, 'y': 10},
-    '6': {'uuid': '0005', 'type': 'obstacle', 'x': 20, 'y': 20},
+    '2': {'uuid': '0002', 'type': 'attacker', 'x': 10, 'y': 20},
+    '3': {'uuid': '0003', 'type': 'defender', 'x': 20, 'y': 10},
+    '4': {'uuid': '0004', 'type': 'defender', 'x': 30, 'y': 10},
+    '5': {'uuid': '0005', 'type': 'target', 'x': 40, 'y': 10},
+    '6': {'uuid': '0006', 'type': 'obstacle', 'x': 20, 'y': 20},
 }
 
 parser = reqparse.RequestParser()
