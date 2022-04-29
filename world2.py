@@ -1,11 +1,13 @@
 from distutils.log import error
 from fileinput import filename
 from operator import index
+from re import X
 import string
 from flask import Flask
 from flask_restful import Resource, Api, reqparse, fields, marshal_with,abort
 import uuid
 import json
+import numpy
 
 
 # based on example from https://medium.com/duomly-blockchain-online-courses/how-to-create-a-simple-rest-api-with-python-and-flask-in-5-minutes-94bb88f74a23
@@ -17,10 +19,11 @@ import json
 #       $ curl http://127.0.0.1:5000/v1/objects/3
 #
 #       add an object with POST
-#       $ curl -d "uuid=0006&type=defender&x=100&y=100" -X POST http://127.0.0.1:5000/v1/objects/
+#       $ curl -d "id=0006&type=defender&x=100&y=100" -X POST http://127.0.0.1:5000/v1/objects/
+#       $ curl -d "type=obstacle&name=obstacle02&x=200&y=200&radius=40" -X POST http://localhost:5000/v1/objects/name/
 #
 #       update an object with PUT
-#       $ curl -d "x=200" -X PUT http://127.0.0.1:5000/v1/objects/6
+#       $ curl -d "x=31&y=11" -X PUT http://localhost:5000/v1/objects/name/defender02
 #
 #       delete an object with DELETE
 #       $ curl -X DELETE http://127.0.0.1:5000/v1/objects/6
@@ -34,21 +37,24 @@ api = Api(app)
 
 # classes for handling objects in the world -- these are persistent for as long as the program runs  
 class world_object():
-    def __init__(self,name:str,type:str,x:int,y:int,radius:int,state:str,obj_id:str=None) -> None:
-        if obj_id=='None' or obj_id==None:
-            self.uuid=uuid.uuid4()
+    def __init__(self,name:str,type:str,x:int,y:int,radius:int,state:str,id:str=None) -> None:
+        if id=='None' or id==None:
+            self.id=uuid.uuid4()
         else:
-            self.uuid=obj_id
+            self.id=id
         self.name=name
         self.type=type
         self.x=x
         self.y=y
         self.radius=radius
-        self.state=state
+        if state==None:
+            self.state='init'
+        else:
+            self.state=state
     
     def serialize(self):
         json_obj= {
-            "uuid":str(self.uuid),
+            "id":str(self.id),
             "name":str(self.name),
             "type":self.type,
             "x":str(self.x),
@@ -71,7 +77,7 @@ class world_object_list():
             config_dict = json.load(file)
             if config_dict:
                 for each in config_dict:
-                    self.object_list.append(world_object(each['name'],each['type'], each['x'], each['y'], each['radius'], each['state'],each['obj_id']))
+                    self.object_list.append(world_object(each['name'],each['type'], each['x'], each['y'], each['radius'], each['state'],each['id']))
             else:
                 print ('No objects in file ' + filename)
                 return None
@@ -87,10 +93,24 @@ class world_object_list():
             return_list.append(each.serialize())
         return return_list
 
-    def get_uuid(self,uuid):
+    def get_id(self,id):
         for each in self.world_object_list:
-            if uuid==each.uuid:
+            if id==each.id:
                 return each
+
+    # this should be called every time an object changes x,y or radius
+    def update_collisions(self):
+        # go through the list of objects and check against collisions with  remaining objects
+        list=self.object_list
+        len=len(self.object_list)
+        for i in range(0,len):
+            for j in range(i,len):
+                a=list[i]
+                b=list[j]
+                a['x']
+
+
+
 
 
 # Create global list of objects in the world -- REST API instances will reference this
@@ -100,16 +120,16 @@ GLOBAL_OBJECT_LIST=world_object_list("init-world.json")
 
 # Classes, functions and variables for implementing the REST API
 obj_parser = reqparse.RequestParser()
-obj_parser.add_argument('obj_id', type=str,help='each object has a unique ID')
+obj_parser.add_argument('id', type=str,help='each object has a unique ID')
 obj_parser.add_argument('name', type=str,help='each object must have a unique name')
 obj_parser.add_argument('type',type=str,help='Type of object (target,attacker,defender,obstacle)')
 obj_parser.add_argument('x',type=int,help='X coordinate of object')
-obj_parser.add_argument('y,',type=int,help='Y coordinate of object')
-obj_parser.add_argument('radius,',type=int,help='Radius of object in meters')
-obj_parser.add_argument('state,',type=str,help='State of of object (init,active,dead')
+obj_parser.add_argument('y',type=int,help='Y coordinate of object')
+obj_parser.add_argument('radius',type=int,help='Radius of object in meters')
+obj_parser.add_argument('state',type=str,help='State of of object (init,active,dead')
 
 resource_fields = {
-    'obj_id':    fields.String,
+    'id':    fields.String,
     'name':    fields.String,
     'type':   fields.String,
     'x' : fields.Integer,
@@ -142,18 +162,32 @@ class object_by_index(Resource):
             abort(404,message="index {} not found".format(obj_index))
 
 
-class object_by_uuid(Resource):
+class object_by_id(Resource):
     def __init__(self) -> None:
         super().__init__()
         self.list=GLOBAL_OBJECT_LIST
 
-    def get(self, obj_uuid):
+    def abort_if_id_exists(self,id):
+        for each in self.list.object_list:
+            if each.id == id:
+                abort(409,message="id {} already exists".format(id))
+
+    def abort_if_id_doesnt_exist(self,id):
+        for each in self.list.object_list:
+            if each.id == id:
+                return each
+        # if you made it here, there was no match
+        abort(404,message="id {} doesn't exist".format(id))
+
+    def get(self, obj_id):
         list=self.list.object_list
-        for each in list:
-            if str(each.uuid) == obj_uuid:
-                return (each.serialize())
-        # if we made it here, no uuid match was found
-        abort(404,message="uuid {} not found".format(obj_uuid))
+        match=self.abort_if_id_doesnt_exist(obj_id)
+        return (match.serialize())
+        
+    def delete(self,obj_id):
+        match = self.abort_if_id_doesnt_exist(obj_id)
+        self.list.object_list.remove(match)
+        return "",202
 
 
 class object_by_name(Resource):
@@ -161,80 +195,58 @@ class object_by_name(Resource):
         super().__init__()
         self.list=GLOBAL_OBJECT_LIST
 
-    def get(self, obj_name):
-        list=self.list.object_list
-        for each in list:
-            if each.name == obj_name:
+    def abort_if_name_exists(self,name):
+        for each in self.list.object_list:
+            if each.name == name:
+                abort(409,message="name {} already exists".format(name))
+
+    def abort_if_name_doesnt_exist(self,name):
+        for each in self.list.object_list:
+            if each.name == name:
+                return each
+        # if you made it here, there was no match
+        abort(404,message="name {} doesn't exist".format(name))
+
+
+    def get(self, name):
+        for each in self.list.object_list:
+            if each.name == name:
                 return (each.serialize())
-        # if we made it here, no obj_id match was found
-        abort(404,message="name {} not found".format(obj_name))
+        # if we made it here, no id match was found
+        abort(404,message="name {} not found".format(name))
 
+    # use the post method to create a new object
+    def post(self, name):
+        args = obj_parser.parse_args()
+        self.abort_if_name_exists(name)
+                
+        # name doesn't exist, create object and append to the list
+        new_obj = world_object(name,args['type'],args['x'],args['y'],args['radius'],args['state'],None)
+        self.list.object_list.append(new_obj)
+        return new_obj.serialize(), 200
 
-class hello(Resource):
-    def get(self,hello_string):
-        return {'hello_string' :  hello_string}
+    # use the put method to update an existing object. You can update x,y,radius and state
+    def put(self,name):
+        args = obj_parser.parse_args()
+        # find named object
+        match=self.abort_if_name_doesnt_exist(name)
+        match.x = args['x'] if args['x'] is not None else match.x 
+        match.y = args['y'] if args['y'] is not None else match.y
+        match.radius = args['radius'] if args['radius'] is not None else match.radius  
+        match.state = args['state'] if args['state'] is not None else match.state 
+        return match.serialize()
 
-    #def put(self, world_object_id):
-    #    parser.add_argument("uuid")
-    #    parser.add_argument("type")
-    #    parser.add_argument("x")
-    #    parser.add_argument("y")
-    #    parser.add_argument("radius")
-    #    parser.add_argument("state")
-    #    args = parser.parse_args()
-    #    if world_object_id not in world_objects:
-    #        world_object_id = int(max(world_objects.keys())) + 1
-    #    else:
-    #        world_object = world_objects[world_object_id]
-    #        world_object["uuid"] = args["uuid"] if args["uuid"] is not None else world_object["uuid"]
-    #        world_object["type"] = args["type"] if args["type"] is not None else world_object["type"]
-    #        world_object["x"] = args["x"] if args["x"] is not None else world_object["x"]
-    #        world_object["y"] = args["y"] if args["y"] is not None else world_object["y"]
-    #        world_object["radius"] = args["radius"] if args["radius"] is not None else world_object["radius"]
-    #        world_object["state"] = args["state"] if args["state"] is not None else world_object["state"]
-    #        return world_object, 200
-
-    #def delete(self, world_object_id):
-    #    if world_object_id not in world_objects:
-    #        return "Not found", 404
-    #    else:
-    #        del world_objects[world_object_id]
-    #        return '', 204
-
-
-
-#def post(self):
-#    parser.add_argument("uuid")
-#    parser.add_argument("type")
-#    parser.add_argument("x")
-#    parser.add_argument("y")
-#    parser.add_argument("radius")
-#    parser.add_argument("state")
-#    args = parser.parse_args()
-#    world_object_id = int(max(world_objects.keys())) + 1
-#    world_object_id = '%i' % world_object_id
-#    world_objects[world_object_id] = {
-#        "uuid": args["uuid"],
-#        "type": args["type"],
-#        "x": args["x"],
-#        "y": args["y"],
-#        "radius": args["radius"],
-#        "state" : args["state"]
-#    }
-#    return world_objects[world_object_id], 201
-
+    def delete(self,name):
+        match = self.abort_if_name_doesnt_exist(name)
+        self.list.object_list.remove(match)
+        return "",202  
 
 if __name__ == "__main__":
-    #print ('GLOBAL_OBJECT_LIST:')
-    #GLOBAL_OBJECT_LIST.print()
-    
-    #objlist = world_object_list("init-world.json")
-    #print(objlist.get_list())
-
-    api.add_resource(all_objects, '/v1/objects/')
-    api.add_resource(object_by_index, '/v1/objects/index/<int:obj_index>')
-    api.add_resource(object_by_uuid, '/v1/objects/uuid/<obj_uuid>')
-    api.add_resource(hello, '/v1/objects/hello/<hello_string>')
+    # add api endpoints
+    api.add_resource(all_objects, '/v1/objects/')       # returns json list of all objects in the world
+    api.add_resource(object_by_index, '/v1/objects/index/<int:obj_index>')  # get a single object based on list index
+    api.add_resource(object_by_id, '/v1/objects/id/<obj_id>') # get a single object based on id
+    api.add_resource(object_by_name, '/v1/objects/name/<name>') # get/post/put/delete a single object based on name
     
     app.run(debug=True)
 
