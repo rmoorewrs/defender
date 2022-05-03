@@ -1,13 +1,16 @@
+from cmath import sqrt
 from distutils.log import error
 from fileinput import filename
 from operator import index
 from re import X
+from sre_parse import State
 import string
+from unicodedata import name
 from flask import Flask
 from flask_restful import Resource, Api, reqparse, fields, marshal_with,abort
 import uuid
 import json
-import numpy
+from math import sqrt
 
 
 # based on example from https://medium.com/duomly-blockchain-online-courses/how-to-create-a-simple-rest-api-with-python-and-flask-in-5-minutes-94bb88f74a23
@@ -33,6 +36,14 @@ import numpy
 # set up RESTful API app
 app = Flask(__name__)
 api = Api(app)
+
+
+def are_two_points_in_range(x1, y1, x2, y2, range):
+    distance = sqrt( (x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
+    if distance <= range:
+        return True
+    else:
+        return False
 
 
 # classes for handling objects in the world -- these are persistent for as long as the program runs  
@@ -78,6 +89,8 @@ class world_object_list():
             if config_dict:
                 for each in config_dict:
                     self.object_list.append(world_object(each['name'],each['type'], each['x'], each['y'], each['radius'], each['state'],each['id']))
+                # check to see if we have any initial sollisions
+                self.update_collisions()
             else:
                 print ('No objects in file ' + filename)
                 return None
@@ -102,15 +115,24 @@ class world_object_list():
     def update_collisions(self):
         # go through the list of objects and check against collisions with  remaining objects
         list=self.object_list
-        len=len(self.object_list)
-        for i in range(0,len):
-            for j in range(i,len):
+        list_len=len(self.object_list)
+        for i in range(0,list_len):
+            for j in range(i+1,list_len):
+                # compute distance between points
                 a=list[i]
                 b=list[j]
-                a['x']
-
-
-
+                # if object isn't active don't consider it for a collision
+                if b.state != 'dead':
+                    if are_two_points_in_range(a.x,a.y,b.x,b.y,a.radius+b.radius) == True:
+                        # we have a collision, mark both parties
+                        print("Collision Detected")
+                        a.state=b.state='dead'
+                    else:
+                        # mark the object active after a move
+                        if a.state=='init':
+                           a.state='active'
+                        if b.state=='init':
+                            b.state='active'
 
 
 # Create global list of objects in the world -- REST API instances will reference this
@@ -127,6 +149,7 @@ obj_parser.add_argument('x',type=int,help='X coordinate of object')
 obj_parser.add_argument('y',type=int,help='Y coordinate of object')
 obj_parser.add_argument('radius',type=int,help='Radius of object in meters')
 obj_parser.add_argument('state',type=str,help='State of of object (init,active,dead')
+obj_parser.add_argument('scanrange',type=int,help='Range of scan to perform in meters')
 
 resource_fields = {
     'id':    fields.String,
@@ -234,6 +257,9 @@ class object_by_name(Resource):
         match.y = args['y'] if args['y'] is not None else match.y
         match.radius = args['radius'] if args['radius'] is not None else match.radius  
         match.state = args['state'] if args['state'] is not None else match.state 
+
+        # check for collisions since we might've changed position or radius
+        self.list.update_collisions()
         return match.serialize()
 
     def delete(self,name):
@@ -241,13 +267,46 @@ class object_by_name(Resource):
         self.list.object_list.remove(match)
         return "",202  
 
+
+class sensor_by_name(Resource):
+    def __init__(self) -> None:
+        super().__init__()
+        self.list=GLOBAL_OBJECT_LIST
+
+    def abort_if_id_doesnt_exist(self,name):
+        for each in self.list.object_list:
+            if each.name == name:
+                return each
+        # if you made it here, there was no match
+        abort(404,message="name {} doesn't exist".format(name))
+
+    def get(self,name):
+        scan=[]
+        args = obj_parser.parse_args()
+        # get the world_object with the right name
+        match=self.abort_if_id_doesnt_exist(name)
+        list=self.object_list
+        list_len=len(self.object_list)
+        for i in range(0,list_len):
+            a=list[i]
+            b=match
+            # don't match yourself
+            if a.name != b.name:
+                if are_two_points_in_range(a.x,a.y,b.x,b.y,args['scanrange']) == True:
+                    scan.append(a)                
+        return scan,200
+        
+
+
 if __name__ == "__main__":
     # add api endpoints
     api.add_resource(all_objects, '/v1/objects/')       # returns json list of all objects in the world
     api.add_resource(object_by_index, '/v1/objects/index/<int:obj_index>')  # get a single object based on list index
     api.add_resource(object_by_id, '/v1/objects/id/<obj_id>') # get a single object based on id
     api.add_resource(object_by_name, '/v1/objects/name/<name>') # get/post/put/delete a single object based on name
-    
+    api.add_resource(sensor_by_name, '/v1/sensors/name/<name>') # get a sensor reading from a named object
+
+
     app.run(debug=True)
 
     
