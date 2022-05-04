@@ -25,11 +25,6 @@ def chart_data():
             yield f"data:{json_data}\n\n"
             time.sleep(1)
 
-        #while True:
-        #    json_data = json.dumps(
-        #        {'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'value': random.random() * 100})
-        #    yield f"data:{json_data}\n\n"
-        #    time.sleep(1)
 
     response = Response(stream_with_context(generate_random_data()), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"
