@@ -1,5 +1,6 @@
 var API_BASE_URL = "http://127.0.0.1:5000/v1";
 var TO_RADIANS = Math.PI/180; 
+var SPRITE_BASE_DIM_PX = 10;
 
 class MapItem {
 
@@ -8,8 +9,8 @@ class MapItem {
         this.sprite = PIXI.Sprite.from(img_path);
         this.uuid = uuid;
         this.state = {};
-        this.sprite.width = 20;
-        this.sprite.height = 20;
+        this.sprite.width = SPRITE_BASE_DIM_PX*2;
+        this.sprite.height = SPRITE_BASE_DIM_PX*2;
 
     }
 
@@ -20,7 +21,7 @@ class MapItem {
         fetch(`${API_BASE_URL}/objects/id/${this.uuid}`).then(response => response.json()).then(function(data)
         {
             me.state = data;
-            me.draw();
+            return me.draw();
             
         });       
 
@@ -32,7 +33,17 @@ class MapItem {
         {
             this.sprite.x = this.state.x;
             this.sprite.y = this.state.y;
+            this.sprite.width = SPRITE_BASE_DIM_PX*this.state.radius;
+            this.sprite.height = SPRITE_BASE_DIM_PX*this.state.radius;
+            this.sprite.angle = this.state.rotation;
+            return true;
             
+        }
+        else
+        {
+
+            this.sprite.destroy();
+            return false;
         }
 
     }
