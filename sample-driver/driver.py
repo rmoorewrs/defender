@@ -1,17 +1,22 @@
+from flask_restful import abort
 import requests
 import json
 import time
 import math
+import sys
 
-BASE_URL='http://127.0.0.1:5000/v1/objects/name/defender03'
+from sqlalchemy import Integer
+
+BASE_URL='http://127.0.0.1:5000/v1/objects/name/'
+URL=''
 
 def get_state() -> dict:
-    rsp = requests.get(BASE_URL)
+    rsp = requests.get(URL)
     state = json.loads(rsp.text)
     return state
 
 def set_state(state):
-    requests.put(BASE_URL, data=state)
+    requests.put(URL, data=state)
 
 step_state = 0
 dstep = math.pi/180.0
@@ -39,7 +44,18 @@ def modify_state(state) -> dict:
 
     return state
 
+def usage():
+    print ("driver.py <object_name>")
+    print ("<object_name> must be a valid object")
+    sys.exit()
+
 if __name__ == "__main__":
+
+    if (len(sys.argv) >= 2):
+        URL=BASE_URL+sys.argv[1]
+    else:
+        usage()
+
     while True:
         state = get_state()
         state = modify_state(state)
