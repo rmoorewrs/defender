@@ -9,7 +9,7 @@ The purpose of the app is to provide something to run on k8s that's more interes
 
 Package requirements:
 ```
-sudo apt install python3 python3-flask python3-flask-restful
+sudo apt install python3 python3-flask python3-flask-restful python3-flask-cors
 ```
 
 First start the world-model server
