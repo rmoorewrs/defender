@@ -1,9 +1,9 @@
 [
     {"id": "009c9db1-2f7f-419c-8930-927f83fe3cfc", "name": "attacker01","type": "attacker", "x": 100, "y": 100, "radius": 1, "state" : "active"},
-    {"id": "10460db0-fd3c-4a63-8f6f-6ca7a5766d56", "name": "attacker02","type": "attacker", "x": 100, "y": -100, "radius": 1, "state" : "active"},
-    {"id": "e83b3639-5433-47e7-ba1e-894d9601a9ca", "name": "defender01","type": "defender", "x": 20, "y": -20, "radius": 1, "state" : "active"},
-    {"id": "25ab672f-68d8-401d-ad6d-b0f7ecdc8eed", "name": "defender02","type": "defender", "x": 20, "y": 0, "radius": 1, "state" : "active"},
-    {"id": "6a56732f-6858-401d-ad6d-b0f7ecdc8f58", "name": "defender03","type": "defender", "x": 20, "y": 20, "radius": 1, "state" : "active"},
-    {"id": "23933932-2fc1-4c66-bf12-24a689ad1308", "name": "target01","type": "target", "x": 0, "y": 0, "radius": 1, "state" : "active"},
-    {"id": "d1fcc686-6f49-450e-b772-ef1be8597aa2", "name": "obstacle01","type": "obstacle", "x": 50, "y": 50, "radius": 10, "state" : "active"}
+    {"id": "10460db0-fd3c-4a63-8f6f-6ca7a5766d56", "name": "attacker02","type": "attacker", "x": 300, "y": 200, "radius": 1, "state" : "active"},
+    {"id": "e83b3639-5433-47e7-ba1e-894d9601a9ca", "name": "defender01","type": "defender", "x": 230, "y": 20, "radius": 1, "state" : "active"},
+    {"id": "25ab672f-68d8-401d-ad6d-b0f7ecdc8eed", "name": "defender02","type": "defender", "x": 240, "y": 98, "radius": 1, "state" : "active"},
+    {"id": "6a56732f-6858-401d-ad6d-b0f7ecdc8f58", "name": "defender03","type": "defender", "x": 305, "y": 68, "radius": 1, "state" : "active"},
+    {"id": "23933932-2fc1-4c66-bf12-24a689ad1308", "name": "target01","type": "target", "x": 110, "y": 10, "radius": 1, "state" : "active"},
+    {"id": "d1fcc686-6f49-450e-b772-ef1be8597aa2", "name": "obstacle01","type": "obstacle", "x": 20, "y": 90, "radius": 10, "state" : "active"}
 ]

@@ -2,8 +2,6 @@ from cmath import sqrt
 from distutils.log import error
 from fileinput import filename
 from operator import index
-from re import X
-from sre_parse import State
 import string
 from unicodedata import name
 from flask import Flask
@@ -11,6 +9,8 @@ from flask_restful import Resource, Api, reqparse, fields, marshal_with,abort
 import uuid
 import json
 from math import sqrt
+from flask_cors import CORS
+
 
 
 # based on example from https://medium.com/duomly-blockchain-online-courses/how-to-create-a-simple-rest-api-with-python-and-flask-in-5-minutes-94bb88f74a23
@@ -35,7 +35,9 @@ from math import sqrt
 
 # set up RESTful API app
 app = Flask(__name__)
+CORS(app)
 api = Api(app)
+
 
 
 def are_two_points_in_range(x1, y1, x2, y2, range):
