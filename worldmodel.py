@@ -18,11 +18,13 @@ from math import sqrt
 #       Get a list of objects
 #       $ curl http://127.0.0.1:5000/v1/objects/
 #
-#       Get a specific object
+#       Get a list of objects by type
+#       $ curl http://127.0.0.1:5000/v1/objects/type/defender
+#
+#       Get a specific object by index
 #       $ curl http://127.0.0.1:5000/v1/objects/3
 #
 #       add an object with POST
-#       $ curl -d "id=0006&type=defender&x=100&y=100" -X POST http://127.0.0.1:5000/v1/objects/
 #       $ curl -d "type=obstacle&name=obstacle02&x=200&y=200&radius=40" -X POST http://localhost:5000/v1/objects/name/
 #
 #       update an object with PUT
@@ -48,7 +50,7 @@ def are_two_points_in_range(x1, y1, x2, y2, range):
 
 # classes for handling objects in the world -- these are persistent for as long as the program runs  
 class world_object():
-    def __init__(self,name:str,type:str,x:int,y:int,radius:int,state:str,id:str=None) -> None:
+    def __init__(self,name:str,type:str,x:int,y:int,radius:int,rotation:int,state:str,id:str=None) -> None:
         if id=='None' or id==None:
             self.id=uuid.uuid4()
         else:
@@ -58,6 +60,7 @@ class world_object():
         self.x=x
         self.y=y
         self.radius=radius
+        self.rotation=rotation
         if state==None:
             self.state='init'
         else:
@@ -71,6 +74,7 @@ class world_object():
             "x":str(self.x),
             "y":str(self.y),
             "radius":str(self.radius),
+            "rotation":str(self.rotation),
             "state":self.state
         }
         return json_obj
@@ -88,7 +92,7 @@ class world_object_list():
             config_dict = json.load(file)
             if config_dict:
                 for each in config_dict:
-                    self.object_list.append(world_object(each['name'],each['type'], each['x'], each['y'], each['radius'], each['state'],each['id']))
+                    self.object_list.append(world_object(each['name'],each['type'], each['x'], each['y'], each['radius'], each['rotation'], each['state'],each['id']))
                 # check to see if we have any initial collisions
                 self.update_collisions()
             else:
@@ -148,6 +152,7 @@ obj_parser.add_argument('type',type=str,help='Type of object (target,attacker,de
 obj_parser.add_argument('x',type=int,help='X coordinate of object')
 obj_parser.add_argument('y',type=int,help='Y coordinate of object')
 obj_parser.add_argument('radius',type=int,help='Radius of object in meters')
+obj_parser.add_argument('rotation',type=int,help='Angle of object in degrees')
 obj_parser.add_argument('state',type=str,help='State of of object (init,active,dead')
 obj_parser.add_argument('scanrange',type=int,help='Range of scan to perform in meters')
 
@@ -158,6 +163,7 @@ resource_fields = {
     'x' : fields.Integer,
     'y' : fields.Integer,
     'radius' : fields.Integer,
+    'rotation' : fields.Integer,
     'state' : fields.String,
 }
 
@@ -260,7 +266,7 @@ class object_by_name(Resource):
         self.abort_if_name_exists(name)
                 
         # name doesn't exist, create object and append to the list
-        new_obj = world_object(name,args['type'],args['x'],args['y'],args['radius'],args['state'],None)
+        new_obj = world_object(name,args['type'],args['x'],args['y'],args['radius'],args['rotation'],args['state'],None)
         self.list.object_list.append(new_obj)
         return new_obj.serialize(), 200
 
@@ -272,6 +278,7 @@ class object_by_name(Resource):
         match.x = args['x'] if args['x'] is not None else match.x 
         match.y = args['y'] if args['y'] is not None else match.y
         match.radius = args['radius'] if args['radius'] is not None else match.radius  
+        match.rotation = arts['rotation'] if args['rotation'] is not None else match.rotation
         match.state = args['state'] if args['state'] is not None else match.state 
 
         # check for collisions since we might've changed position or radius
