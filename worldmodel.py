@@ -24,6 +24,9 @@ from flask_cors import CORS
 #       Get a specific object by index
 #       $ curl http://127.0.0.1:5000/v1/objects/3
 #
+#       Get a specific object by name
+#       $ curl http://localhost:5000/v1/objects/name/attacker01
+#
 #       add an object with POST
 #       $ curl http://localhost:5000/v1/objects/name/obstacle05 -X POST -d "name=obstacle05&x=200&y=200&type=obstacle"
 #
@@ -67,7 +70,7 @@ class world_object():
         self.radius=radius
         self.rotation=rotation
         if state==None:
-            self.state='init'
+            self.state='active'
         else:
             self.state=state
     
@@ -121,6 +124,7 @@ class world_object_list():
                 return each
 
     # this should be called every time an object changes x,y or radius
+    # [TODO] obstacles shouldn't die in collision
     def update_collisions(self):
         # go through the list of objects and check against collisions with  remaining objects
         list=self.object_list
@@ -135,13 +139,10 @@ class world_object_list():
                     if are_two_points_in_range(a.x,a.y,b.x,b.y,a.radius+b.radius) == True:
                         # we have a collision, mark both parties
                         print("Collision Detected")
-                        a.state=b.state='dead'
-                    else:
-                        # mark the object active after a move
-                        if a.state=='init':
-                           a.state='active'
-                        if b.state=='init':
-                            b.state='active'
+                        if a.type != 'obstacle':
+                            a.state='dead'
+                        if b.state != 'obstacle':
+                            b.state='dead'
 
 
 # Create global list of objects in the world -- REST API instances will reference this
@@ -158,7 +159,7 @@ obj_parser.add_argument('x',type=int,help='X coordinate of object')
 obj_parser.add_argument('y',type=int,help='Y coordinate of object')
 obj_parser.add_argument('radius',type=int,help='Radius of object in meters')
 obj_parser.add_argument('rotation',type=int,help='Angle of object in degrees')
-obj_parser.add_argument('state',type=str,help='State of of object (init,active,dead')
+obj_parser.add_argument('state',type=str,help='State of of object (active,dead')
 obj_parser.add_argument('scanrange',type=int,help='Range of scan to perform in meters')
 
 

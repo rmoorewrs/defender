@@ -5,7 +5,8 @@ import time
 import math
 import sys
 
-from sqlalchemy import Integer
+import debugpy
+debugpy.listen(5678)
 
 BASE_URL='http://127.0.0.1:5000/v1/objects/name/'
 URL=''
@@ -61,4 +62,7 @@ if __name__ == "__main__":
         state = modify_state(state)
         set_state(state)
         time.sleep(0.25)
+        if state['state'] == 'dead':
+            print (sys.argv[1] + "died due to collision!")
+            sys.exit
 
