@@ -11,6 +11,7 @@ class MapItem {
         this.state = {};
         this.sprite.width = SPRITE_BASE_DIM_PX*2;
         this.sprite.height = SPRITE_BASE_DIM_PX*2;
+        this.sprite.anchor.set(0.5); // set anchor to 50% so rotations occur around the center
 
     }
 

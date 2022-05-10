@@ -15,6 +15,10 @@ class MapManager {
 
         this.delta_map_obj_idx = 0;
 
+        this.reset_button = new MapButton("/assets/buttons/reset-up.png","/assets/buttons/reset-dn.png",  window.innerWidth-100, 100, () => console.log("reset pushed"));
+
+        this.pixi.stage.addChild(this.reset_button.sprite);
+
 
 
     }
