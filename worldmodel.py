@@ -34,7 +34,7 @@ from flask_cors import CORS
 #       $ curl -X DELETE http://127.0.0.1:5000/v1/objects/6
 #
 #       reset the world model back to contents of init-world.json
-#       $ curl http://localhost:5000 -X POST
+#       $ curl http://localhost:5000/v1/commands/reset -X POST
 
 
 
