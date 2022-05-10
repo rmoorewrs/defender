@@ -2,7 +2,7 @@ var API_BASE_URL = "http://127.0.0.1:5000/v1";
 
 class MapManager {
     constructor() {
-        this.pixi = new PIXI.Application({ width:  window.innerWidth, height:  window.innerHeight, backgroundColor:0x479d2e });
+        this.pixi = new PIXI.Application({ width:  window.innerWidth, height:  window.innerHeight, backgroundColor:0x160d61 });
         this.timer = null;
         
         this.map_objects = [];
@@ -47,34 +47,27 @@ class MapManager {
                 switch(obj.type)
                 {
                     case "defender": {
-                        var item = new MapItem(obj.id, "/assets/tanks/sherman.png");
+                        var item = new MapItem(obj.id, "/assets/space/defender01.png");
                         me.addToMapIfNotExists(item);
                         break;
                     }
 
                     case "attacker": {
-                        var item = new MapItem(obj.id, "/assets/tanks/panzer.png");
+                        var item = new MapItem(obj.id, "/assets/space/attacker01.png");
                         me.addToMapIfNotExists(item);
                         break;
                     }
 
                     case "target": {
-                        var item = new MapItem(obj.id, "/assets/base/Sculptures/Sculpture-2.png");
+                        var item = new MapItem(obj.id, "/assets/space/target01.png");
                         me.addToMapIfNotExists(item);
                         break;
                     }
 
                     case "obstacle": {
                         var obstacle_types = [
-                            "/assets/base/Stones/Stone-1.png",
-                            "/assets/base/Stones/Stone-2.png",
-                            "/assets/base/Trees/Tree-1/Tree-1-1.png",
-                            "/assets/base/Trees/Tree-1/Tree-1-2.png",
-                            "/assets/base/Trees/Tree-1/Tree-1-3.png",
-                            "/assets/base/Trees/Tree-2/Tree-2-1.png",
-                            "/assets/base/Trees/Tree-2/Tree-2-2.png",
-                            "/assets/base/Trees/Tree-2/Tree-2-3.png"
-            
+                            "/assets/space/obstacle01.png",
+                            "/assets/space/obstacle02.png"
                         ];
                         var item = new MapItem(obj.id, obstacle_types[Math.floor(Math.random() * obstacle_types.length)]);
                         me.addToMapIfNotExists(item);
