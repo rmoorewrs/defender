@@ -25,13 +25,16 @@ from flask_cors import CORS
 #       $ curl http://127.0.0.1:5000/v1/objects/3
 #
 #       add an object with POST
-#       $ curl -d "type=obstacle&name=obstacle02&x=200&y=200&radius=40" -X POST http://localhost:5000/v1/objects/name/
+#       $ curl http://localhost:5000/v1/objects/name/obstacle05 -X POST -d "name=obstacle05&x=200&y=200&type=obstacle"
 #
 #       update an object with PUT
 #       $ curl -d "x=31&y=11" -X PUT http://localhost:5000/v1/objects/name/defender02
 #
 #       delete an object with DELETE
 #       $ curl -X DELETE http://127.0.0.1:5000/v1/objects/6
+#
+#       reset the world model back to contents of init-world.json
+#       $ curl http://localhost:5000 -X POST
 
 
 
@@ -157,6 +160,8 @@ obj_parser.add_argument('radius',type=int,help='Radius of object in meters')
 obj_parser.add_argument('rotation',type=int,help='Angle of object in degrees')
 obj_parser.add_argument('state',type=str,help='State of of object (init,active,dead')
 obj_parser.add_argument('scanrange',type=int,help='Range of scan to perform in meters')
+
+
 
 resource_fields = {
     'id':    fields.String,
@@ -320,7 +325,26 @@ class sensor_by_name(Resource):
                 if are_two_points_in_range(a.x,a.y,b.x,b.y,args['scanrange']) == True:
                     scan.append(a)                
         return scan,200
-        
+
+
+# set up command parser
+cmd_parser = reqparse.RequestParser()
+cmd_parser.add_argument('reset', type=str,help='reset the world model to the init-world file')
+
+class management_commands(Resource):
+    def __init__(self) -> None:
+        super().__init__()
+        self.list=GLOBAL_OBJECT_LIST
+
+    def post(self,command):
+        global GLOBAL_OBJECT_LIST
+        args=cmd_parser.parse_args()
+        if command == "reset":
+            GLOBAL_OBJECT_LIST=world_object_list("init-world.json")
+            return {"reset" : "True"},200
+        return {"response": "Command not found"},404
+
+
 
 
 if __name__ == "__main__":
@@ -331,6 +355,7 @@ if __name__ == "__main__":
     api.add_resource(object_by_id, '/v1/objects/id/<obj_id>') # get a single object based on id
     api.add_resource(object_by_name, '/v1/objects/name/<name>') # get/post/put/delete a single object based on name
     api.add_resource(sensor_by_name, '/v1/sensors/name/<name>') # get a sensor reading from a named object
+    api.add_resource(management_commands, '/v1/commands/<command>') # implement some management commands
 
 
     app.run(debug=True)
