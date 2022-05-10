@@ -31,12 +31,13 @@ class MapButton{
     {
         this.sprite.texture = this.txt_down;
         this.sprite.alpha = 1.0;
-        this.click();
+
     }
 
     buttonUp()
     {
         this.sprite.texture = this.txt_up;
+        this.click();
     }
 
 

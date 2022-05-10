@@ -1,5 +1,21 @@
 var API_BASE_URL = "http://127.0.0.1:5000/v1";
 
+
+function doReset()
+{
+    fetch(`${API_BASE_URL}/commands/reset`, {method: "POST"}).then(function()
+    
+    {
+
+        location.reload(true);
+
+    });
+    
+    
+
+}
+
+
 class MapManager {
     constructor() {
         this.pixi = new PIXI.Application({ width:  window.innerWidth, height:  window.innerHeight, backgroundColor:0x160d61 });
@@ -15,7 +31,7 @@ class MapManager {
 
         this.delta_map_obj_idx = 0;
 
-        this.reset_button = new MapButton("/assets/buttons/reset-up.png","/assets/buttons/reset-dn.png",  window.innerWidth-100, 100, () => console.log("reset pushed"));
+        this.reset_button = new MapButton("/assets/buttons/reset-up.png","/assets/buttons/reset-dn.png",  window.innerWidth-100, 100, doReset);
 
         this.pixi.stage.addChild(this.reset_button.sprite);
 
