@@ -5,9 +5,6 @@ import time
 import math
 import sys
 
-import debugpy
-debugpy.listen(5678)
-
 BASE_URL='http://127.0.0.1:5000/v1/objects/name/'
 URL=''
 
