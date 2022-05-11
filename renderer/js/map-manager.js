@@ -25,9 +25,12 @@ class MapManager {
 
         document.body.appendChild(this.pixi.view);
 
+        this.pixi.ticker.minFPS = 4;
+        this.pixi.ticker.maxFPS = 8;
+
+
         this.pixi.ticker.add((dlt) => this.loop(dlt));
 
-        this.cumulative_delta = 0.0;
 
         this.delta_map_obj_idx = 0;
 
@@ -110,10 +113,7 @@ class MapManager {
     loop(delta)
     {
         
-        this.cumulative_delta += delta;
-
-        if(this.cumulative_delta < 1)return;
-
+       
         if(this.map_objects.length != 0)
         {
             if(this.map_objects[this.delta_map_obj_idx].update() == false)
@@ -130,7 +130,7 @@ class MapManager {
             this.load();
         }            
         
-        this.cumulative_delta = 0;
+
 
     }
 
