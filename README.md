@@ -5,11 +5,13 @@ The purpose of the app is to provide something to run as a demo that's more inte
 
 Here's the scenario: attackers are trying to reach a target, defenders are trying to prevent that from happening and obstacles get in the way. If an attacker reaches the target, the simulation is over. If objects collide, they die (except obstacles, which survive collisions). 
 
+![](images/scenario.png)
+
 The world-model is a simple database that keeps track of all objects in the simulated world. Interaction with the world-model is via a RESTful API and beyond detecting collisions between objects, the world-model doesn't actively do anything. 
 
 Each object needs an agent or driver program to move it around in the world. Each object will have an driver program that controls it's movement. In a typical video game, all of the actors would be combined for efficiency, but the goal here is to enable distributed appliations interacting on an embedded, containerized or hybrid computing platform.
 
-Rendering takes place in a browser via JavaScript that reads and renders the state of the world by polling the world-model.
+Rendering is done in a browser where a JavaScript program reads and renders the state of the world by polling the world-model.
 
 
 ![](images/defender-diagram.png)
@@ -39,7 +41,7 @@ python3 attacker01
 ```
 Look in `init-world.json` to see the default list of objects the world starts with
 
-## REST API -|rough doc|umentation|
+## REST API - rough documentation
 
 
 ### Get a list of objects
