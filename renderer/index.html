@@ -17,7 +17,9 @@
 <script>
     $(document).ready(function () {
 
-        var mm = new MapManager();
+        var host = prompt("Please enter the host and port:", "localhost:5000");
+
+        var mm = new MapManager(host);
 
         mm.load();
        

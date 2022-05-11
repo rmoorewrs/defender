@@ -1,9 +1,6 @@
-var API_BASE_URL = "http://127.0.0.1:5000/v1";
-
-
-function doReset()
+function doReset(api_base)
 {
-    fetch(`${API_BASE_URL}/commands/reset`, {method: "POST"}).then(function()
+    fetch(`${api_base}/commands/reset`, {method: "POST"}).then(function()
     
     {
 
@@ -17,8 +14,11 @@ function doReset()
 
 
 class MapManager {
-    constructor() {
+    constructor(host) {
         this.pixi = new PIXI.Application({ width:  window.innerWidth, height:  window.innerHeight, backgroundColor:0x160d61 });
+
+        this.api_base = `http://${host}/v1`;
+        
         this.timer = null;
         
         this.map_objects = [];
@@ -31,7 +31,7 @@ class MapManager {
 
         this.delta_map_obj_idx = 0;
 
-        this.reset_button = new MapButton("/assets/buttons/reset-up.png","/assets/buttons/reset-dn.png",  window.innerWidth-100, 100, doReset);
+        this.reset_button = new MapButton("/assets/buttons/reset-up.png","/assets/buttons/reset-dn.png",  window.innerWidth-100, 100, () => doReset(this.api_base));
 
         this.pixi.stage.addChild(this.reset_button.sprite);
 
@@ -59,7 +59,7 @@ class MapManager {
     {
         // get all objects
         var me = this;
-        fetch(`${API_BASE_URL}/objects/`).then(response => response.json()).then(function(data)
+        fetch(`${this.api_base}/objects/`).then(response => response.json()).then(function(data)
         {
             for (const obj of data)
             {
@@ -67,19 +67,19 @@ class MapManager {
                 switch(obj.type)
                 {
                     case "defender": {
-                        var item = new MapItem(obj.id, "/assets/space/defender01.png");
+                        var item = new MapItem(me.api_base, obj.id, "/assets/space/defender01.png");
                         me.addToMapIfNotExists(item);
                         break;
                     }
 
                     case "attacker": {
-                        var item = new MapItem(obj.id, "/assets/space/attacker01.png");
+                        var item = new MapItem(me.api_base, obj.id, "/assets/space/attacker01.png");
                         me.addToMapIfNotExists(item);
                         break;
                     }
 
                     case "target": {
-                        var item = new MapItem(obj.id, "/assets/space/target01.png");
+                        var item = new MapItem(me.api_base, obj.id, "/assets/space/target01.png");
                         me.addToMapIfNotExists(item);
                         break;
                     }
@@ -89,7 +89,7 @@ class MapManager {
                             "/assets/space/obstacle01.png",
                             "/assets/space/obstacle02.png"
                         ];
-                        var item = new MapItem(obj.id, obstacle_types[Math.floor(Math.random() * obstacle_types.length)]);
+                        var item = new MapItem(me.api_base, obj.id, obstacle_types[Math.floor(Math.random() * obstacle_types.length)]);
                         me.addToMapIfNotExists(item);
                         break;
                     }
