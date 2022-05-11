@@ -70,27 +70,51 @@ class MapManager {
                 switch(obj.type)
                 {
                     case "defender": {
-                        var item = new MapItem(me.api_base, obj.id, "/assets/space/defender01.png");
+                        var tex_map = {
+                            active: "/assets/space/defender01.png",
+                            dead: "/assets/space/generic-dead.png"
+
+                        };
+                        var item = new MapItem(me.api_base, obj.id, tex_map);
                         me.addToMapIfNotExists(item);
                         break;
                     }
 
                     case "attacker": {
-                        var item = new MapItem(me.api_base, obj.id, "/assets/space/attacker01.png");
+                     var tex_map = {
+                            active: "/assets/space/attacker01.png",
+                            dead: "/assets/space/generic-dead.png"
+
+                        };
+                        var item = new MapItem(me.api_base, obj.id, tex_map);
                         me.addToMapIfNotExists(item);
                         break;
                     }
 
                     case "target": {
-                        var item = new MapItem(me.api_base, obj.id, "/assets/space/target01.png");
+                        var tex_map = {
+                            active: "/assets/space/target01.png",
+                            dead: "/assets/space/generic-dead.png"
+
+                        };
+                        var item = new MapItem(me.api_base, obj.id, tex_map);
                         me.addToMapIfNotExists(item);
                         break;
                     }
 
                     case "obstacle": {
+
                         var obstacle_types = [
-                            "/assets/space/obstacle01.png",
-                            "/assets/space/obstacle02.png"
+                                {
+                                    active: "/assets/space/obstacle01.png",
+                                    dead: "/assets/space/generic-dead.png"
+
+                                },
+                                {
+                                    active: "/assets/space/obstacle02.png",
+                                    dead: "/assets/space/generic-dead.png"
+
+                                }
                         ];
                         var item = new MapItem(me.api_base, obj.id, obstacle_types[Math.floor(Math.random() * obstacle_types.length)]);
                         me.addToMapIfNotExists(item);
