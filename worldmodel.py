@@ -134,15 +134,19 @@ class world_object_list():
                 # compute distance between points
                 a=list[i]
                 b=list[j]
-                # if object isn't active don't consider it for a collision
-                if b.state != 'dead':
-                    if are_two_points_in_range(a.x,a.y,b.x,b.y,a.radius+b.radius) == True:
-                        # we have a collision, mark both parties
-                        print("Collision Detected")
-                        if a.type != 'obstacle':
-                            a.state='dead'
-                        if b.state != 'obstacle':
-                            b.state='dead'
+                # An object has to be alive to participate in a collision
+                if a.state == 'dead' or b.state == 'dead':
+                    continue
+                        
+                # check to see objects are in collision range
+                if are_two_points_in_range(a.x,a.y,b.x,b.y,a.radius+b.radius) == True:
+                    # we have a collision, mark any non-obstacle parties(Obstacles don't die in a collision)
+                    print("Collision Detected")
+                    if a.type != 'obstacle':
+                        a.state='dead'
+                    if b.type != 'obstacle':
+                        b.state='dead'
+                    
 
 
 # Create global list of objects in the world -- REST API instances will reference this
