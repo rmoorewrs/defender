@@ -61,9 +61,9 @@ def are_two_points_in_range(x1, y1, x2, y2, range):
 
 # classes for handling objects in the world -- these are persistent for as long as the program runs  
 class world_object():
-    def __init__(self,name:str,type:str,x:int,y:int,radius:int,rotation:int,state:str,id:str=None) -> None:
+    def __init__(self,name:str,type:str,x:float,y:float,radius:float,rotation:float,state:str,id:str=None) -> None:
         if id=='None' or id==None:
-            self.id=uuid.uuid4()
+            self.id=str(uuid.uuid4())
         else:
             self.id=id
         self.name=name
@@ -82,10 +82,10 @@ class world_object():
             "id":str(self.id),
             "name":str(self.name),
             "type":self.type,
-            "x":str(self.x),
-            "y":str(self.y),
-            "radius":str(self.radius),
-            "rotation":str(self.rotation),
+            "x":float(self.x),
+            "y":float(self.y),
+            "radius":float(self.radius),
+            "rotation":float(self.rotation),
             "state":self.state
         }
         return json_obj
@@ -162,10 +162,10 @@ obj_parser = reqparse.RequestParser()
 obj_parser.add_argument('id', type=str,help='each object has a unique ID')
 obj_parser.add_argument('name', type=str,help='each object must have a unique name')
 obj_parser.add_argument('type',type=str,help='Type of object (target,attacker,defender,obstacle)')
-obj_parser.add_argument('x',type=int,help='X coordinate of object')
-obj_parser.add_argument('y',type=int,help='Y coordinate of object')
-obj_parser.add_argument('radius',type=int,help='Radius of object in meters')
-obj_parser.add_argument('rotation',type=int,help='Angle of object in degrees')
+obj_parser.add_argument('x',type=float,help='X coordinate of object')
+obj_parser.add_argument('y',type=float,help='Y coordinate of object')
+obj_parser.add_argument('radius',type=float,help='Radius of object in meters')
+obj_parser.add_argument('rotation',type=float,help='Angle of object in degrees')
 obj_parser.add_argument('state',type=str,help='State of of object (active,dead')
 obj_parser.add_argument('scanrange',type=int,help='Range of scan to perform in meters')
 
@@ -175,10 +175,10 @@ resource_fields = {
     'id':    fields.String,
     'name':    fields.String,
     'type':   fields.String,
-    'x' : fields.Integer,
-    'y' : fields.Integer,
-    'radius' : fields.Integer,
-    'rotation' : fields.Integer,
+    'x' : fields.Float,
+    'y' : fields.Float,
+    'radius' : fields.Float,
+    'rotation' : fields.Float,
     'state' : fields.String,
 }
 
