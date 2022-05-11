@@ -1,20 +1,21 @@
-# defender
-This is a simple defender simulation demo intended to run on a container-based platform like Docker or Kubernetes. The application is fully distributed and each component can be run in its own container or on an embedded target. By design, the components have no specific hardware, OS or language requirements.
+# Defender
+This is a simple defender simulation demo intended to run on a container-based platform like Docker or Kubernetes. The application is fully distributed and each component can run in its own container or on an embedded target. By design, the components have no specific hardware, OS or language requirements.
 
 The purpose of the app is to provide something to run as a demo that's more interesting than the standard 'hello world'. The point is to have distributed components interacting in a way that's easy to visualize and understand. 
 
-Here's the scenario: attackers are trying to reach a target, defenders are trying to prevent that from happening and obstacles get in the way. If an attacker reaches the target, the simulation is over. If objects collide, they die (except obstacles, which survive collisions). 
+![](images/defender-diagram.png)
 
-![](images/scenario.png)
+The world-model is a simple database that keeps track of all objects in the simulated world. Interaction with the world-model is via a RESTful API and beyond detecting collisions between objects, the world-model doesn't actively do anything on its own. 
 
-The world-model is a simple database that keeps track of all objects in the simulated world. Interaction with the world-model is via a RESTful API and beyond detecting collisions between objects, the world-model doesn't actively do anything. 
+Rules of the simulation: attackers try to reach the target, defenders try to stop them and obstacles get in the way. If an attacker collides with the target (round flying saucer at the top in this implementation), the simulation is over. When objects collide, they die. The exception are obstacles, which survive collision. Once dead, objects don't cause further collisions.
 
-Each object needs an agent or driver program to move it around in the world. Each object will have an driver program that controls it's movement. In a typical video game, all of the actors would be combined for efficiency, but the goal here is to enable distributed appliations interacting on an embedded, containerized or hybrid computing platform.
+Each object needs an agent or driver program to move it around in the world, so the intent is to have one control program per container which controls one object in the world model. In a typical video game, all of the actors would be combined for efficiency, but the goal here is to demonstrate distributed appliations interacting on an embedded, containerized or hybrid compute platform (hybrid meaning some parts running in containers, others on embedded targets).
 
 Rendering is done in a browser where a JavaScript program reads and renders the state of the world by polling the world-model.
 
+The scenario can easily be changed by providing a different set of sprite graphics.
 
-![](images/defender-diagram.png)
+![](images/scenario.png)
 
 
 Package requirements:
