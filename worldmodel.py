@@ -38,6 +38,9 @@ from flask_cors import CORS
 #
 #       reset the world model back to contents of init-world.json
 #       $ curl http://localhost:5000/v1/commands/reset -X POST
+#
+#       scan for objects relative to named object
+#       $ curl http://localhost:5000/v1/sensors/name/attacker01?scanrange=200 -X GET
 
 
 
@@ -137,7 +140,7 @@ class world_object_list():
                 # An object has to be alive to participate in a collision
                 if a.state == 'dead' or b.state == 'dead':
                     continue
-                        
+
                 # check to see objects are in collision range
                 if are_two_points_in_range(a.x,a.y,b.x,b.y,a.radius+b.radius) == True:
                     # we have a collision, mark any non-obstacle parties(Obstacles don't die in a collision)
@@ -320,15 +323,15 @@ class sensor_by_name(Resource):
         args = obj_parser.parse_args()
         # get the world_object with the right name
         match=self.abort_if_id_doesnt_exist(name)
-        list=self.object_list
-        list_len=len(self.object_list)
+        list=self.list.object_list
+        list_len=len(list)
         for i in range(0,list_len):
             a=list[i]
             b=match
             # don't match yourself
             if a.name != b.name:
                 if are_two_points_in_range(a.x,a.y,b.x,b.y,args['scanrange']) == True:
-                    scan.append(a)                
+                    scan.append(a.serialize())      
         return scan,200
 
 
