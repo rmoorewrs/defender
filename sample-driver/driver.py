@@ -60,6 +60,6 @@ if __name__ == "__main__":
         set_state(state)
         time.sleep(0.25)
         if state['state'] == 'dead':
-            print (sys.argv[1] + "died due to collision!")
-            sys.exit
+            print (sys.argv[1] + " died due to collision!")
+            sys.exit({"status":"Object is Dead"})
 
