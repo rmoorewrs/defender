@@ -100,6 +100,11 @@ $ curl -X DELETE http://127.0.0.1:5000/v1/objects/name/attacker01
 $ curl http://localhost:5000/v1/commands/reset -X POST
 ```
 
+### Dump the world-model objects into a json file
+```
+$ curl http://10.10.11.56:5000/v1/commands/dump -X POST -d "filename=test01.json"
+```
+
 ### get a sensor scan seen by a named object
 ```
 $ curl http://localhost:5000/v1/sensors/name/attacker01?scanrange=200 -X GET

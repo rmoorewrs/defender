@@ -39,6 +39,9 @@ from flask_cors import CORS
 #       reset the world model back to contents of init-world.json
 #       $ curl http://localhost:5000/v1/commands/reset -X POST
 #
+#       Dump the world-model objects into a json file
+#       $ curl http://10.10.11.56:5000/v1/commands/dump -X POST -d "filename=test01.json"
+#
 #       scan for objects relative to named object
 #       $ curl http://localhost:5000/v1/sensors/name/attacker01?scanrange=200 -X GET
 
