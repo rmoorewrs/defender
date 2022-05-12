@@ -337,7 +337,7 @@ class sensor_by_name(Resource):
 
 # set up command parser
 cmd_parser = reqparse.RequestParser()
-cmd_parser.add_argument('reset', type=str,help='reset the world model to the init-world file')
+cmd_parser.add_argument('filename', type=str,help='dump the state of the world to a file called <filename>')
 
 class management_commands(Resource):
     def __init__(self) -> None:
@@ -350,6 +350,12 @@ class management_commands(Resource):
         if command == "reset":
             GLOBAL_OBJECT_LIST=world_object_list("init-world.json")
             return {"reset" : "True"},200
+        elif command == "dump":
+            with open(args['filename'],'w') as file:
+                list=GLOBAL_OBJECT_LIST.get_list()
+                jlist=json.dumps(list)
+                file.write(jlist)
+            return {"dump" : args['filename']}
         return {"response": "Command not found"},404
 
 
