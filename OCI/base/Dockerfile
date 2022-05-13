@@ -3,7 +3,10 @@ FROM windriver/wrlx-image:full@sha256:6259a1477a12e815966d76b613666054d52b522664
 ENV HOME_DIR /home/wruser
 ENV UID=1000
 ENV GID=1000
+ENV PS1=\h:base-\w$ 
 ENV DEFENDER_GIT_REPO=https://github.com/rmoorewrs/defender.git
+
+EXPOSE 5000-5010
 
 RUN dnf -y install python3 python3-pip git curl sudo 
 RUN pip3 install flask flask_restful flask_cors requests
@@ -12,8 +15,10 @@ RUN useradd -m -u ${UID} -g wruser wruser
 RUN usermod -aG sudo wruser
 RUN echo 'wruser:wruser' |chpasswd
 
+
 USER wruser
 WORKDIR ${HOME_DIR}
+RUN echo 'export PS1="\h:base\w\$ "' >> .bashrc
 RUN git clone ${DEFENDER_GIT_REPO}
 
 ENV LANG=en_US.UTF-8
