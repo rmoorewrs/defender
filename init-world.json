@@ -113,8 +113,8 @@
         "id": "9edf30dd-c651-4140-8d45-31db0a68d779",
         "name": "obstacle06",
         "type": "obstacle",
-        "x": 410.0,
-        "y": 540.0,
+        "x": 580.0,
+        "y": 680.0,
         "radius": 3.0,
         "rotation": 35.0,
         "state": "active"

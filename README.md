@@ -23,27 +23,40 @@ Package requirements:
 sudo apt install python3 python3-flask python3-flask-restful python3-flask-cors
 ```
 
-First start the world-model server
+## 1) First start the world-model server and the server address advertiser
 ```
-python3 world-model.py
-```
+$ python3 world-model.py
+$ python3 server_ip_multicast.py send <rest_server_ip> <rest_server_port>
 
-Then start the renderer
+example:
+    python3 server_ip_multicast.py send 10.10.11.56 5000
+```
+The server_ip_multicast.py can be started as a receiver to test the multicast message
+```
+$ python3 server_ip_multicast.py recv
+```
+## 2) Start the renderer
 ```
 cd renderer
  ./serve.sh 
 ```
-and exit with Ctrl-C.  The map will be available at [http://localhost:5001/](http://localhost:5001/)
+Exit with Ctrl-C.  The map will be available at [http://localhost:5001/](http://localhost:5001/)
 
-A sample "Driver" or agent is available in `./sample-driver`. The driver takes the name of an object and then begins to move it around in the 2D world map.
+## 3) Start the Object Drivers
+Example "Driver" or agents are available in the top directory (driver-*.py). The drivers take the name of an active object as an argument and then begin to move that object around in the 2D world map. If the object collides, it will die and the driver program will exit.
 ```
-cd sample-driver
-python3 attacker01
+$ python3 driver-circle.py attacker01
 ```
-Look in `init-world.json` to see the default list of objects the world starts with
+Look in `init-world.json` to see the default list of objects the world starts with, or use 
+```
+$ curl http://<server_ip_address>:<port>/v1/objects/
+```
+to get a list of all objects in the world.
 
-## REST API - rough documentation
 
+------
+
+# REST API - rough documentation
 
 ### Get a list of objects
 ```
