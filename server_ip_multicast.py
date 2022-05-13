@@ -47,6 +47,15 @@ def multicast_recv(recv_nic_ip, multicast_grp_ip, multicast_port):
     receiver.close()
     return msg 
 
+def wait_forever_for_server_address():
+    # wait forever to receive the server ip/port multicast
+    print("Waiting to receive server IP address and Port")
+    buf=multicast_recv("0.0.0.0",MC_GROUP_ADDRESS,MC_PORT)
+    msg=json.loads(buf)
+    ip=msg[0]['ip']
+    port=msg[1]['port']
+    return "http://" + ip + ':' + str(port)
+
 if __name__=='__main__':
     if len(sys.argv) < 2:
         help_and_exit(sys.argv[0])

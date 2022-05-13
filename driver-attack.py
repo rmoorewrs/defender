@@ -40,15 +40,7 @@ def modify_state(state) -> dict:
 
     return state
 
-def wait_forever_for_server_address():
-    # wait forever to receive the server ip/port multicast
-    print("Waiting to receive server IP address and Port")
-    buf=server_ip_multicast.multicast_recv("0.0.0.0",server_ip_multicast.MC_GROUP_ADDRESS,server_ip_multicast.MC_PORT)
-    msg=json.loads(buf)
-    ip=msg[0]['ip']
-    port=msg[1]['port']
-    return "http://" + ip + ':' + str(port)
-    
+   
 
 def usage_and_exit(app_name):
     print (app_name + " <object_name>")
@@ -62,7 +54,7 @@ if __name__ == "__main__":
      
     object_name=sys.argv[1]
     
-    server_address=wait_forever_for_server_address()
+    server_address=server_ip_multicast.wait_forever_for_server_address()
     URL= server_address + API_PATH + object_name
     print ("Connecting to server at " + server_address + " using full API path " + URL)
 
