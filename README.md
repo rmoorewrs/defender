@@ -53,6 +53,54 @@ $ curl http://<server_ip_address>:<port>/v1/objects/
 ```
 to get a list of all objects in the world.
 
+------
+
+# Running from Containers
+The OCI folder contains a base image that is used to derive container images for the server (i.e. world_model.py), the renderer and the drivers.
+
+## Building containers
+In order to build the containers locally, do the following:
+```
+$cd OCI/base
+$ docker build -t defender-base .
+
+$cd ../OCI/server
+$ docker build -t defender-server .
+
+$ cd ../OCI/renderer
+$ docker build -t defender-render .
+```
+Note: buildah bud fails on the base container. If you prefer to use buildah, remove the digest from the `FROM` line in the base Dockerfile.
+
+## Running from containers in Docker
+To run the containers in docker, do the following:
+```
+# start the world server and determine IP address
+$ docker container run --rm -it -name defender-server defender-server
+$ docker inspect defender-server | grep "IPAddress"
+example: 172.17.0.3
+
+# start the renderer and determine IP address
+$ docker container run --rm -it -name defender-render defender-render
+$ docker inspect defender-render | grep "IPAddress"
+example: 172.17.0.4
+```
+
+For the example IP addresses above (use your own IP addresses):
+
+Point your browser at the renderer [http://172.17.0.4:5001]
+
+On the webpage, you should see a dialog box asking for an IP:Port. Enter the IP address of the server, in this example, enter: 
+```
+172.17.0.3:5000
+```
+![](images/server-dialog.png)
+
+Note: do not include `http`, only the IP:Port of the world model server address
+
+## Running from Containers in Kubernetes
+
+TBD
 
 ------
 

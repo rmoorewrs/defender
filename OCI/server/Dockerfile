@@ -1,5 +1,4 @@
-#FROM rmoorewrs/defender-base:latest
-FROM defender-base-u18
+FROM defender-base
 
 EXPOSE 5000-5010
 
