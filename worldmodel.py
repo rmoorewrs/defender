@@ -162,15 +162,15 @@ GLOBAL_OBJECT_LIST=world_object_list("init-world.json")
 
 # Classes, functions and variables for implementing the REST API
 obj_parser = reqparse.RequestParser()
-obj_parser.add_argument('id', type=str,help='each object has a unique ID')
-obj_parser.add_argument('name', type=str,help='each object must have a unique name')
-obj_parser.add_argument('type',type=str,help='Type of object (target,attacker,defender,obstacle)')
-obj_parser.add_argument('x',type=float,help='X coordinate of object')
-obj_parser.add_argument('y',type=float,help='Y coordinate of object')
-obj_parser.add_argument('radius',type=float,help='Radius of object in meters')
-obj_parser.add_argument('rotation',type=float,help='Angle of object in degrees')
-obj_parser.add_argument('state',type=str,help='State of of object (active,dead')
-obj_parser.add_argument('scanrange',type=int,help='Range of scan to perform in meters')
+obj_parser.add_argument('id', type=str,help='each object has a unique ID',location='form')
+obj_parser.add_argument('name', type=str,help='each object must have a unique name',location='form')
+obj_parser.add_argument('type',type=str,help='Type of object (target,attacker,defender,obstacle)',location='form')
+obj_parser.add_argument('x',type=float,help='X coordinate of object',location='form')
+obj_parser.add_argument('y',type=float,help='Y coordinate of object',location='form')
+obj_parser.add_argument('radius',type=float,help='Radius of object in meters',location='form')
+obj_parser.add_argument('rotation',type=float,help='Angle of object in degrees',location='form')
+obj_parser.add_argument('state',type=str,help='State of of object (active,dead',location='form')
+obj_parser.add_argument('scanrange',type=int,help='Range of scan to perform in meters',location='form')
 
 
 
