@@ -38,31 +38,43 @@ def modify_state(state) -> dict:
     step_state += dstep
     
 
-    return state
-
-   
+    return state 
 
 def usage_and_exit(app_name):
-    print (app_name + " <object_name>")
+    print (app_name + " <object_name> [server IP:port | multicast]")
     print ("<object_name> must be a valid object")
     sys.exit()
 
 if __name__ == "__main__":
-
     if (len(sys.argv) < 2):
         usage_and_exit(sys.argv[0])
-     
+
+    # get name of object to move around in world-model 
     object_name=sys.argv[1]
-    
-    server_address=server_ip_multicast.wait_forever_for_server_address()
+
+    # check for IP or multicast
+    server_address="http://worldserver:5000"  # set default worldserver address
+    if len(sys.argv) == 3:
+        if sys.argv[2] == 'multicast':
+            server_address=server_ip_multicast.wait_forever_for_server_address()
+        else:
+            server_address='http://' + sys.argv[2]
+        
     URL= server_address + API_PATH + object_name
     print ("Connecting to server at " + server_address + " using full API path " + URL)
-
+    
     while True:
-        state = get_state()
-        state = modify_state(state)
-        set_state(state)
-        time.sleep(0.25)
+        retry_period=5
+        state={'state':'init'}
+        try:
+            state = get_state()
+            state = modify_state(state)
+            set_state(state)
+            time.sleep(0.25)
+        except:
+            print(f'failed to connect to server {URL} retrying in {retry_period} seconds')
+            time.sleep(retry_period)
+
         if state['state'] == 'dead':
             print (sys.argv[1] + " died due to collision!")
             sys.exit({"status":"Object is Dead"})
