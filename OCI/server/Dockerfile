@@ -8,4 +8,4 @@ ENV LANG=en_US.UTF-8
 USER wruser
 RUN echo 'export PS1="\h:server\w\$ "' >> .bashrc
 WORKDIR ${HOME_DIR}/defender
-ENTRYPOINT ["/home/wruser/defender/start_server.sh"]
+CMD ["/home/wruser/defender/start_server.sh"]
