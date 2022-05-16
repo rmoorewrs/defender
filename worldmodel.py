@@ -340,7 +340,7 @@ class sensor_by_name(Resource):
 
 # set up command parser
 cmd_parser = reqparse.RequestParser()
-cmd_parser.add_argument('filename', type=str,help='dump the state of the world to a file called <filename>')
+cmd_parser.add_argument('filename', type=str,help='dump the state of the world to a file called <filename>',location='form')
 
 class management_commands(Resource):
     def __init__(self) -> None:
