@@ -4,7 +4,6 @@ ENV HOME_DIR /home/wruser
 ENV UID=1000
 ENV GID=1000
 ENV PS1=\h:base-\w$ 
-ENV DEFENDER_GIT_REPO=https://github.com/rmoorewrs/defender.git
 
 EXPOSE 5000-5010
 
@@ -19,8 +18,8 @@ RUN echo "wruser ALL=(ALL) ALL" >> /etc/sudoers
 USER wruser
 ENV PATH=$PATH:/home/wruser/.local/.bin
 WORKDIR ${HOME_DIR}
-RUN echo 'export PS1="\h:base\w\$ "' >> .bashrc
-RUN git clone ${DEFENDER_GIT_REPO}
+RUN echo 'export PS1="\h:base\w\$ "' > ${HOME_DIR}/.bashrc
+# moved git clone defender to the derived images
 
 ENV LANG=en_US.UTF-8
 CMD ["/bin/bash"]
