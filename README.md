@@ -47,15 +47,20 @@ cd renderer
 Exit with Ctrl-C.  The map will be available at [http://localhost:5001/](http://localhost:5001/)
 
 ## 3) Start the Object Drivers
-Example "Driver" or agents are available in the top directory (driver-*.py). The drivers take the name of an active object as an argument and then begin to move that object around in the 2D world map. If the object collides, it will die and the driver program will exit.
+Example "Driver" or agents are available in the top directory (driver-*.py). The drivers take the name of an active object as an argument and a second argument that specifies either what IP and port (e.g. 172.17.0.3:5000) or "multicast" to try and detect the address of the world server. 
+
+The driver will then begin to move that object around in the 2D world map. If the object collides with something, it will die and the driver program will exit.
 ```
-$ python3 driver-circle.py attacker01
+$ python3 driver-circle.py attacker01 [IP:Port | multicast]
 ```
+
 Look in `init-world.json` to see the default list of objects the world starts with, or use 
 ```
 $ curl http://<server_ip_address>:<port>/v1/objects/
 ```
-to get a list of all objects in the world.
+to get a list of all objects in the world. 
+
+The ultimate goal is to create controllers that manage the creation and deletion of actors in the simulation.
 
 ------
 
