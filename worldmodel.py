@@ -3,6 +3,7 @@ from distutils.log import error
 from fileinput import filename
 from operator import index
 import string
+from turtle import heading
 from unicodedata import name
 from flask import Flask
 from flask_restful import Resource, Api, reqparse, fields, marshal_with,abort
@@ -64,7 +65,7 @@ def are_two_points_in_range(x1, y1, x2, y2, range):
 
 # classes for handling objects in the world -- these are persistent for as long as the program runs  
 class world_object():
-    def __init__(self,name:str,type:str,x:float,y:float,radius:float,rotation:float,state:str,id:str=None) -> None:
+    def __init__(self,name:str,type:str,x:float,y:float,radius:float,rotation:float,speed:float,state:str,id:str=None) -> None:
         if id=='None' or id==None:
             self.id=str(uuid.uuid4())
         else:
@@ -75,6 +76,7 @@ class world_object():
         self.y=y
         self.radius=radius
         self.rotation=rotation
+        self.speed=speed
         if state==None:
             self.state='active'
         else:
@@ -89,6 +91,7 @@ class world_object():
             "y":float(self.y),
             "radius":float(self.radius),
             "rotation":float(self.rotation),
+            "speed":float(self.speed),
             "state":self.state
         }
         return json_obj
@@ -106,7 +109,7 @@ class world_object_list():
             config_dict = json.load(file)
             if config_dict:
                 for each in config_dict:
-                    self.object_list.append(world_object(each['name'],each['type'], each['x'], each['y'], each['radius'], each['rotation'], each['state'],each['id']))
+                    self.object_list.append(world_object(each['name'],each['type'], each['x'], each['y'], each['radius'], each['rotation'], each['speed'],each['state'],each['id']))
                 # check to see if we have any initial collisions
                 self.update_collisions()
             else:
@@ -169,6 +172,7 @@ obj_parser.add_argument('x',type=float,help='X coordinate of object',location='f
 obj_parser.add_argument('y',type=float,help='Y coordinate of object',location='form')
 obj_parser.add_argument('radius',type=float,help='Radius of object in meters',location='form')
 obj_parser.add_argument('rotation',type=float,help='Angle of object in degrees',location='form')
+obj_parser.add_argument('speed',type=float,help='Speed of object in meters/second',location='form')
 obj_parser.add_argument('state',type=str,help='State of of object (active,dead',location='form')
 obj_parser.add_argument('scanrange',type=int,help='Range of scan to perform in meters',location='form')
 
@@ -182,6 +186,7 @@ resource_fields = {
     'y' : fields.Float,
     'radius' : fields.Float,
     'rotation' : fields.Float,
+    'speed': fields.Float,
     'state' : fields.String,
 }
 
@@ -284,7 +289,7 @@ class object_by_name(Resource):
         self.abort_if_name_exists(name)
                 
         # name doesn't exist, create object and append to the list
-        new_obj = world_object(name,args['type'],args['x'],args['y'],args['radius'],args['rotation'],args['state'],None)
+        new_obj = world_object(name,args['type'],args['x'],args['y'],args['radius'],args['rotation'],args['speed'],args['state'],None)
         self.list.object_list.append(new_obj)
         return new_obj.serialize(), 200
 
@@ -297,6 +302,7 @@ class object_by_name(Resource):
         match.y = args['y'] if args['y'] is not None else match.y
         match.radius = args['radius'] if args['radius'] is not None else match.radius  
         match.rotation = args['rotation'] if args['rotation'] is not None else match.rotation
+        match.speed = args['speed'] if args['speed'] is not None else match.rotation
         match.state = args['state'] if args['state'] is not None else match.state 
 
         # check for collisions since we might've changed position or radius

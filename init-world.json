@@ -7,6 +7,7 @@
         "y": 700.0,
         "radius": 3.0,
         "rotation": 0.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -17,6 +18,7 @@
         "y": 700.0,
         "radius": 3.0,
         "rotation": 0.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -27,6 +29,7 @@
         "y": 300.0,
         "radius": 3.0,
         "rotation": 180.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -37,6 +40,7 @@
         "y": 325.0,
         "radius": 3.0,
         "rotation": 180.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -47,6 +51,7 @@
         "y": 300.0,
         "radius": 3.0,
         "rotation": 180.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -57,6 +62,7 @@
         "y": 50.0,
         "radius": 6.0,
         "rotation": 0.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -67,6 +73,7 @@
         "y": 150.0,
         "radius": 3.0,
         "rotation": 0.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -77,6 +84,7 @@
         "y": 190.0,
         "radius": 4.0,
         "rotation": 0.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -87,6 +95,7 @@
         "y": 190.0,
         "radius": 2.0,
         "rotation": 0.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -97,6 +106,7 @@
         "y": 220.0,
         "radius": 2.0,
         "rotation": 0.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -107,6 +117,7 @@
         "y": 500.0,
         "radius": 4.0,
         "rotation": 0.0,
+        "speed":0.0,
         "state": "active"
     },
     {
@@ -117,6 +128,7 @@
         "y": 680.0,
         "radius": 3.0,
         "rotation": 35.0,
+        "speed":0.0,
         "state": "active"
     }
 ]
