@@ -7,9 +7,13 @@ The purpose of the app is to provide something to run as a demo that's more inte
 
 The world-model is a simple database that keeps track of all objects in the simulated world. Interaction with the world-model is via a RESTful API and beyond detecting collisions between objects, the world-model doesn't actively do anything on its own. 
 
-Rules of the simulation: attackers try to reach the target, defenders try to stop them and obstacles get in the way. If an attacker collides with the target (round flying saucer at the top in this implementation), the simulation is over. When objects collide, they die. The exception are obstacles, which survive collision. Once dead, objects don't cause further collisions.
+Rules of the simulation: attackers try to reach the target, defenders try to stop them and obstacles get in the way. When objects collide, they die. The exception are obstacles, which survive collision. Once dead, objects don't cause further collisions.
 
-Each object needs an agent or driver program to move it around in the world, so the intent is to have one control program per container which controls one object in the world model. In a typical video game, all of the actors would be combined for efficiency, but the goal here is to demonstrate distributed appliations interacting on an embedded, containerized or hybrid compute platform (hybrid meaning some parts running in containers, others on embedded targets).
+If an attacker collides with the target (round flying saucer at the top in this implementation), the simulation is over. When objects collide, they die. The exception are obstacles, which survive collision. Once dead, objects don't cause further collisions.
+
+Each object needs an agent or driver program to move it around in the world, so the intent is to have one object driver (control program) per container which controls one object in the world model. 
+
+This is not about efficiency -- in a real video game or simulation, all of the actors would be typically combined into one program. The goal here is to demonstrate distributed appliations interacting on an embedded, containerized or hybrid compute platform (hybrid meaning some parts running in containers, others on embedded targets) -- so the "distributed" part has been maximized intentionally.
 
 Rendering is done in a browser where a JavaScript program reads and renders the state of the world by polling the world-model.
 
