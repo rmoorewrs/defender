@@ -108,10 +108,11 @@ Valid parameters are:
 |id       | uuid, unique
 |name     | name, unique|
 |type     | object type: attacker,defender,obstacle,target|
-|x        | x cooridnate|
-|y        | y coordinate|
-|radius   | object radius|
-|rotation | rotational angle, degrees|
+|x        | x cooridnate in units|
+|y        | y coordinate in units|
+|radius   | object radius in units|
+|rotation | rotational angle or heading, degrees|
+|speed    | speed in units/sec |
 |state    | object state: active, dead|
     
 All distance parameters are in arbitrary units... adjust per the simulation scenario
