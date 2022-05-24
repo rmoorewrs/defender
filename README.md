@@ -71,7 +71,17 @@ See [OCI/README.md](https://github.com/rmoorewrs/defender/blob/master/OCI/README
 
 ------
 
-# REST API - rough documentation
+# REST API Documentation
+
+### Get and Set boundaries of world model
+Get Boundaries:
+```
+$ curl http://127.0.0.1:5000/v1/parameters/bounds/
+```
+Set Boundaries:
+```
+$ curl http://127.0.0.1:5000/v1/parameters/bounds/ -X PUT -d "xmax=2048&ymax=1536"
+```
 
 ### Get a list of objects
 ```

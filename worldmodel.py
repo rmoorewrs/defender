@@ -16,6 +16,10 @@ from flask_cors import CORS
 
 # based on example from https://medium.com/duomly-blockchain-online-courses/how-to-create-a-simple-rest-api-with-python-and-flask-in-5-minutes-94bb88f74a23
 # to exercise with curl:
+#
+#       Get world model boundaries
+#       $ curl http://localhost:5000/v1/parameters/bounds/
+#
 #       Get a list of objects
 #       $ curl http://127.0.0.1:5000/v1/objects/
 #
@@ -46,6 +50,8 @@ from flask_cors import CORS
 #       scan for objects relative to named object
 #       $ curl http://localhost:5000/v1/sensors/name/attacker01?scanrange=200 -X GET
 
+
+# Some defaults
 
 
 # set up RESTful API app
@@ -161,9 +167,49 @@ class world_object_list():
 # Create global list of objects in the world -- REST API instances will reference this
 GLOBAL_OBJECT_LIST=world_object_list("init-world.json")
 
+##########################################
+# Resource class for world map parameters
+##########################################
 
+# default world map boundaries
+DEFAULT_XMAX = 1024
+DEFAULT_XMIN = 0
+DEFAULT_YMAX = 768
+DEFAULT_YMIN = 0
 
-# Classes, functions and variables for implementing the REST API
+param_parser = reqparse.RequestParser()
+param_parser.add_argument('xmax', type=float,help='maximum x limit on world map', location='form')
+param_parser.add_argument('xmin', type=float,help='minimum x limit on world map', location='form')
+param_parser.add_argument('ymax', type=float,help='maximum y limit on world map', location='form')
+param_parser.add_argument('ymin', type=float,help='minimum y limit on world map', location='form')
+
+class world_limits(Resource):
+    def __init__(self) -> None:
+        super().__init__()
+        self.xmax=DEFAULT_XMAX
+        self.ymax=DEFAULT_YMAX
+        self.xmin=
+        self.ymin=DEFAULT_YMIN
+
+    def serialize(self):
+        return [{'xmax':self.xmax},{'xmin':self.xmin},{'ymax':self.ymax},{'ymin':self.ymin}]
+
+    def get(self):
+        return self.serialize(),200
+
+    def put(self):
+        args = param_parser.parse_args()
+        self.xmax = args['xmax'] if args['xmax'] is not None else self.xmax
+        self.xmin = args['xmin'] if args['xmin'] is not None else self.xmin
+        self.ymax = args['ymax'] if args['ymax'] is not None else self.ymax
+        self.ymin = args['ymin'] if args['ymin'] is not None else self.ymin
+        return self.serialize(),200
+
+##########################################
+# Resource classes for world objects - Classes, functions and variables for implementing the REST API
+##########################################
+
+# set up parser for requests related to objects
 obj_parser = reqparse.RequestParser()
 obj_parser.add_argument('id', type=str,help='each object has a unique ID',location='form')
 obj_parser.add_argument('name', type=str,help='each object must have a unique name',location='form')
@@ -176,20 +222,17 @@ obj_parser.add_argument('speed',type=float,help='Speed of object in meters/secon
 obj_parser.add_argument('state',type=str,help='State of of object (active,dead',location='form')
 obj_parser.add_argument('scanrange',type=int,help='Range of scan to perform in meters',location='form')
 
-
-
-resource_fields = {
-    'id':    fields.String,
-    'name':    fields.String,
-    'type':   fields.String,
-    'x' : fields.Float,
-    'y' : fields.Float,
-    'radius' : fields.Float,
-    'rotation' : fields.Float,
-    'speed': fields.Float,
-    'state' : fields.String,
-}
-
+# resource_fields = {
+#     'id':    fields.String,
+#     'name':    fields.String,
+#     'type':   fields.String,
+#     'x' : fields.Float,
+#     'y' : fields.Float,
+#     'radius' : fields.Float,
+#     'rotation' : fields.Float,
+#     'speed': fields.Float,
+#     'state' : fields.String,
+# }
 
 class all_objects(Resource):
     def __init__(self) -> None:
@@ -213,8 +256,6 @@ class all_objects_by_type(Resource):
                 result.append(each)
         return result,200
 
-
-
 class object_by_index(Resource):
     def __init__(self) -> None:
         super().__init__()
@@ -226,9 +267,6 @@ class object_by_index(Resource):
             return (obj.serialize())
         else:
             abort(404,message="index {} not found".format(obj_index))
-
-
-
 
 class object_by_id(Resource):
     def __init__(self) -> None:
@@ -314,7 +352,9 @@ class object_by_name(Resource):
         self.list.object_list.remove(match)
         return "",202  
 
-
+##########################################
+# Resource class for sensors objects
+##########################################
 class sensor_by_name(Resource):
     def __init__(self) -> None:
         super().__init__()
@@ -344,6 +384,10 @@ class sensor_by_name(Resource):
         return scan,200
 
 
+##########################################
+# Resource class for management commands
+##########################################
+
 # set up command parser
 cmd_parser = reqparse.RequestParser()
 cmd_parser.add_argument('filename', type=str,help='dump the state of the world to a file called <filename>',location='form')
@@ -368,10 +412,13 @@ class management_commands(Resource):
         return {"response": "Command not found"},404
 
 
-
+##########################################
+# main
+##########################################
 
 if __name__ == "__main__":
     # add api endpoints
+    api.add_resource(world_limits, '/v1/parameters/bounds/') # returns json list of world limits
     api.add_resource(all_objects, '/v1/objects/')       # returns json list of all objects in the world
     api.add_resource(all_objects_by_type, '/v1/objects/types/<type>')     # get a list of objects based on type
     api.add_resource(object_by_index, '/v1/objects/index/<int:obj_index>')  # get a single object based on list index
