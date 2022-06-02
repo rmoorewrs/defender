@@ -212,7 +212,7 @@ param_parser.add_argument(
     "ymax", type=float, help="maximum y limit on world map", location="form"
 )
 param_parser.add_argument(
-    "ymin", type=float, help="minimum y limit on world map", location="form"
+    "ymin", type=float, help="minimum y limit on world map", location="args"
 )
 
 
@@ -276,9 +276,7 @@ obj_parser.add_argument(
 obj_parser.add_argument(
     "state", type=str, help="State of of object (active,dead", location="form"
 )
-obj_parser.add_argument(
-    "scanrange", type=int, help="Range of scan to perform in meters", location="form"
-)
+
 
 # resource_fields = {
 #     'id':    fields.String,
@@ -429,6 +427,12 @@ class ObjectByName(Resource):
 ##########################################
 # Resource class for sensors objects
 ##########################################
+sensor_parser = reqparse.RequestParser()
+sensor_parser.add_argument(
+    "scanrange", type=float, help="Range of scan to perform in meters", location="args"
+)
+
+
 class SensorByName(Resource):
     def __init__(self) -> None:
         super().__init__()
@@ -443,7 +447,7 @@ class SensorByName(Resource):
 
     def get(self, name):
         scan = []
-        args = obj_parser.parse_args()
+        args = sensor_parser.parse_args()
         # get the WorldObject with the right name
         match = self.abort_if_id_doesnt_exist(name)
         list = self.list.object_list
