@@ -3,7 +3,7 @@ This is a simple defender simulation demo intended to run on a container-based p
 
 The purpose of the app is to provide something to run as a demo that's more interesting than the standard 'hello world'. The point is to have distributed components interacting in a way that's easy to visualize and understand. 
 
-![](images/defender-diagram.png)
+![](images/defender-diagram2.png)
 
 The world-model is a simple database that keeps track of all objects in the simulated world. Interaction with the world-model is via a RESTful API and beyond detecting collisions between objects, the world-model doesn't actively do anything on its own. 
 
