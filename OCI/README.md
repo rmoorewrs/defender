@@ -29,7 +29,7 @@ $ docker build -t defender-base .
 
 Run as follows:
 ```
-$ docker container run --rm -it -name defender-base defender-base
+$ docker container run --rm -it --name defender-base defender-base
 ```
 
 ## 2) Defender Server Image
@@ -44,10 +44,10 @@ $ docker build -t defender-server .
 Run server as follows:
 ```
 # run interactively to see logs
-$ docker container run --rm -it -name defender-server defender-server
+$ docker container run --rm -it --name defender-server defender-server
 
 # Or, run non-interactively 
-$ docker container run --rm -name defender-server defender-server
+$ docker container run --rm --name defender-server defender-server
 ```
 
 Determine the IP address of the server and record for later use
