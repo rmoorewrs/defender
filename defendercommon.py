@@ -1,161 +1,230 @@
 """
 Common classes used by defender programs
 """
-from math import exp, sqrt
+import math as m
+import numpy as np
+import euclid as eu
 import requests as req
 import json
 import time
-import math
 import sys
 import server_ip_multicast
 
 # set some constants
-DEFAULT_MAX_SPEED = 10  # maximum speed we can move
-DEFAULT_DELTA_T = 0.25  # main loop period
-DEFAULT_SCANRANGE = 200
+DEFAULT_MAX_SPEED = 20  # maximum speed we can move
+DEFAULT_DELTA_T = 0.1  # main loop period
+DEFAULT_SCANRANGE = 50
 DEFAULT_RETRY_PERIOD = 10
 DEFAULT_SERVER_ADDRESS = "http://localhost:5000"
 OBJECT_API_PATH = "/v1/objects/name/"
 SENSOR_API_PATH = "/v1/sensors/name/"
 
 
-class Point:
-    def __init__(self, x: float, y: float, rotation: float) -> None:
-        self.x = x
-        self.y = y
-        self.rotation = rotation
-        return None
+# define point class that includes rotation value
+class Point(eu.Point2):
+    def __init__(self, x: float, y: float, rotation: float = 0.0) -> None:
+        super().__init__(x, y)
+        self.rotation_angle = rotation
 
     # return distance between this point and x,y passed in
-    def distance(self, x: float, y: float) -> float:
+    def dist(self, x: float, y: float) -> float:
         dx = self.x - x
         dy = self.y - y
-        return sqrt(dx * dx + dy * dy)
+        a = self.distance()
+        return m.hypot(dx, dy)
+
+    # convert Point's cartesian x,y to polar rho,phi
+    def car2pol(self) -> tuple:
+        # phi returned in degrees
+        rho = m.hypot(self.x, self.y)
+        phi = np.arctan2(self.y, self.x)
+        return (rho, np.rad2deg(phi))
+
+    def pol2car(self, rho, phi) -> tuple:
+        # phi passed in as degrees
+        x = rho * np.cos(np.deg2rad(phi))
+        y = rho * np.sin(np.deg2rad(phi))
+        return (x, y)
 
 
-# Base class for travel segments. All segments go between 2 points.
-class Segment:
+# class that holds object parameters
+class Object(Point):
     def __init__(
         self,
-        p1: Point,
-        p2: Point,
-        tick_period: float = DEFAULT_DELTA_T,
-        speed: float = DEFAULT_MAX_SPEED,
+        x: float,
+        y: float,
+        rotation: float,
+        radius: float,
+        speed: float,
+        type: str,
+        name: str,
+        state: str,
+        id: str = None,
     ) -> None:
-        self.segment_finished = False
-        self.p1 = p1
-        self.p2 = p2
-        self.delta_x = p2.x - p1.x
-        self.delta_y = p2.y - p1.y
-        self.deta_rotation = p2.rotation - p1.rotation
+        super().__init__(x, y, rotation)
+        self.id = id
+        self.name = name
+        self.type = type
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.rotation = rotation
         self.speed = speed
-        self.tick_period = tick_period
-        self.tick_count = 0  # keep track of ticks advanced
+        self.state = state
 
-        # set length traveled for each tick and compute number of ticks
-        self.tick_travel = self.speed * self.tick_period
-        self.n = self.length / self.tick_travel
+    # return circle representing object's radius and current position
+    def hitbox(self) -> eu.Circle:
+        return eu.Circle(eu.Point2(self.x, self.y), self.radius)
 
-    # functions that should be implemented by derived classes
-    def compute_nth_point(self, count: float) -> Point:
-        pass
+    # if an object is a target, we want to hit it
+    def is_target(self) -> bool:
+        if self.type == "target":
+            return True
+        else:
+            return False
 
-    def advance_one_tick(self):
-        pass
 
-
-# Create a linear segment that gets from point 1 to point 2
-class SegmentLinear(Segment):
+# PathSegment goes between 2 points.
+class PathSegment(eu.Line2):
     def __init__(
         self,
-        p1: Point,
-        p2: Point,
-        tick_period: float = DEFAULT_DELTA_T,
+        pt1: Point,
+        pt2: Point,
+        my_radius: float,
+        period: float = DEFAULT_DELTA_T,
         speed: float = DEFAULT_MAX_SPEED,
     ) -> None:
-        super().__init__(p1, p2, tick_period, speed)
-
+        super().__init__(pt1, pt2)
+        self.last_pos = pt1
+        self.pt1 = pt1  # starting point
+        self.pt2 = pt2  # ending point
+        self.my_radius = my_radius
+        self.delta_x = pt2.x - pt1.x
+        self.delta_y = pt2.y - pt1.y
+        self.deta_rotation = pt2.rotation_angle - pt1.rotation_angle
+        self.length = self.v.magnitude()
         # detect vertical line, which can't use y=mx+b
-        if p1.x == p2.x:
+        if pt1.x == pt2.x:
             # vertical is a special case that has no slope
             self.type = "vertical"
             self.slope = None
-            self.x = p1.x
+            self.x = pt1.x
             self.length = abs(self.delta_y)
         else:
             self.type = "nonvertical"
             # solve for slope and y intercept
             self.slope = self.delta_y / self.delta_x
-            self.y_intercept = p1.y - (self.slope * p1.x)
-            self.length = sqrt(
-                self.delta_x * self.delta_x + self.delta_y * self.delta_y
-            )
-        # set length traveled for each tick and compute number of ticks
-        self.tick_travel = self.speed * self.tick_period
-        self.n = self.length / self.tick_travel
+            self.y_intercept = pt1.y - (self.slope * pt1.x)
+            self.length = m.hypot(self.delta_x, self.delta_y)
 
-    def compute_nth_point(self, count: float) -> Point:
+    # check path ahead and return true if we're on collision course
+    # up to caller to check whether object is a target or not
+    def might_collide(self, obstacle: Object) -> bool:
+        hitbox = obstacle.hitbox()
+        dist = self.distance(hitbox)
+        if self.intersect(hitbox) or dist < self.my_radius + hitbox.r:
+            return True
+        else:
+            return False
+
+    def is_segment_complete(self, p: Point) -> bool:
+        if (
+            p.x == self.pt2.x
+            and p.y == self.pt2.y
+            and p.rotation == self.pt2.rotation_angle
+        ):
+            return True
+        else:
+            return False
+
+    # compute point that is s percent alont the segment
+    # s=0.0 returns p1, s=100.0 returns p2
+    def compute_point(self, s: float) -> Point:
         p = Point(0, 0, 0)
-        percent_traveled = count / self.n
+        s = s / 100.0
         if self.type == "vertical":
             p.x = self.x
-            p.y = self.p1.y + (percent_traveled * self.delta_y)
+            p.y = self.pt1.y + (s * self.delta_y)
         else:
             # nonvertical, compute y=mx+b
-            p.x = self.p1.x + (percent_traveled * self.delta_x)
+            p.x = self.pt1.x + (s * self.delta_x)
             p.y = self.slope * p.x + self.y_intercept
-        # compute new rotation
-        p.rotation = self.p1.rotation + (percent_traveled * self.deta_rotation)
-        return p
-
-    # advance forward by one tick's worth, return True if finished
-    def advance_one_tick(self):
-        self.tick_count += 1
-        p = self.compute_nth_point(self.tick_count)
-        # check to see if we're on the last chunk, return the goal if so
-        if p.distance(self.p2.x, self.p2.y) < self.tick_travel:
-            self.segment_finished = True
-            p = self.p2
-        return p, self.segment_finished
+        # compute new object rotation
+        p.rotation = self.pt1.rotation_angle + (s * self.deta_rotation)
+        self.last_pos = p
+        return self.last_pos
 
 
-# class for handling object state operations
-class ObjectState:
+# An object is something returned from world_model server which has a unique name
+class DriverRestClient:
     def __init__(self, server_address, object_name) -> None:
-        self.object_state = None
+        self.object_state_json = None
         self.sensor_scan = None
         self.object_state_url = server_address + OBJECT_API_PATH + object_name
         self.sensor_state_url = server_address + SENSOR_API_PATH + object_name
         return
 
-    def get_object_state(self) -> dict:
+    def get_object_state(self, json_format: bool = False) -> any:
         try:
             rsp = req.get(self.object_state_url)
-            self.object_state = json.loads(rsp.text)
-            return self.object_state
+            self.object_state_json = json.loads(rsp.text)
+            if json_format is False:
+                return Object(
+                    float(self.object_state_json["x"]),
+                    float(self.object_state_json["y"]),
+                    float(self.object_state_json["rotation"]),
+                    float(self.object_state_json["radius"]),
+                    float(self.object_state_json["speed"]),
+                    self.object_state_json["type"],
+                    self.object_state_json["name"],
+                    self.object_state_json["state"],
+                    self.object_state_json["id"],
+                )
+            else:
+                return self.object_state_json
         except req.exceptions.RequestException:
             print(f"failed to connect to server {self.object_state_url}")
             return None
 
-    def set_state(self, state):
-        self.object_state = state
+    def set_object_state(self, json_state):
+        self.object_state_json = json_state
         try:
-            req.put(self.object_state_url, data=self.object_state)
+            req.put(self.object_state_url, data=self.object_state_json)
         except req.exceptions.req.RequestException:
             print(f"failed to connect to server {self.object_state_url}")
             print(f"")
 
-    # set speed and write it out to the REST server
-    def set_speed(self, speed=DEFAULT_MAX_SPEED) -> dict:
-        self.object_state["speed"] = speed
-        self.set_state(self.object_state)
-        return self.object_state
+    # get object speed
+    def get_speed(self) -> float:
+        return float(self.object_state_json["speed"])
 
-    def get_sensor_state(self, scan_range) -> dict:
+    # set object speed and write it out to the world_model server
+    def set_speed(self, speed=DEFAULT_MAX_SPEED) -> dict:
+        self.object_state_json["speed"] = speed
+        self.set_object_state(self.object_state_json)
+        return self.object_state_json
+
+    def get_sensor_state(self, scan_range) -> list:
         try:
             rsp = req.get(self.sensor_state_url + "?scanrange=" + str(scan_range))
-            sensor_scan = json.loads(rsp.text)
-            return sensor_scan
+            scan = json.loads(rsp.text)
+            object_list = []
+            # Convert string-based object into an Object with euclidean properties
+            for each in scan:
+                object_list.append(
+                    Object(
+                        x=float(each["x"]),
+                        y=float(each["y"]),
+                        rotation=float(each["rotation"]),
+                        radius=float(each["radius"]),
+                        speed=float(each["speed"]),
+                        type=each["type"],
+                        name=each["name"],
+                        state=each["state"],
+                        id=each["id"],
+                    )
+                )
+            return object_list
         except req.exceptions.RequestException:
             print(f"failed to connect to server {self.object_state_url}")
             return None
@@ -169,26 +238,43 @@ class ObjectState:
                 time.sleep(poll_period)
                 state = self.get_object_state()
 
-    def abort_if_dead(self):
-        if self.object_state["state"] == "dead":
+    def exit_if_dead(self):
+        if self.object_state_json["state"] == "dead":
             sys.exit({"status": "Object is Dead"})
         else:
             return None
 
-    def abort_if_outofbounds(self):
+    def exit_if_outofbounds(self):
         pass
 
+    def get_object(self) -> Object:
+        return Object(self.x, self.y, self.rotation, self.radius, self.type)
+
+    # get/set points
     def get_point(self) -> Point:
         p = Point(
-            self.object_state["x"],
-            self.object_state["y"],
-            self.object_state["rotation"],
+            float(self.object_state_json["x"]),
+            float(self.object_state_json["y"]),
+            float(self.object_state_json["rotation"]),
         )
         return p
 
     def set_point(self, p: Point) -> None:
-        new_state = self.get_object_state
+        new_state = self.get_object_state(json_format=True)
         new_state["x"] = p.x
         new_state["y"] = p.y
-        new_state["rotation"] = p.rotation
-        self.set_state(new_state)
+        new_state["rotation"] = p.rotation_angle
+        self.set_object_state(new_state)
+
+    def get_object(self) -> Object:
+        return Object(
+            x=float(self.object_state_json["x"]),
+            y=float(self.object_state_json["y"]),
+            rotation=float(self.object_state_json["rotation"]),
+            radius=float(self.object_state_json["radius"]),
+            speed=float(self.object_state_json["speed"]),
+            type=self.object_state_json["type"],
+            name=self.object_state_json["name"],
+            state=self.object_state_json["state"],
+            id=self.object_state_json["id"],
+        )

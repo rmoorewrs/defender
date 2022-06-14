@@ -29,3 +29,5 @@ New version:
 obj_parser = reqparse.RequestParser()
 obj_parser.add_argument('id', type=str,help='each object has a unique ID',location='form')
 ```
+
+Note: parsing a query string, you have to use location='args' instead of 'form'
