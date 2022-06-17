@@ -23,6 +23,8 @@ DEFAULT_SERVER_ADDRESS = "http://localhost:5000"
 
 # define point class that includes rotation value
 class Point(eu.Point2):
+    """Class to extend euclid Point2 class with rotation"""
+
     def __init__(self, x: float, y: float, rotation: float = 0.0) -> None:
         super().__init__(x, y)
         self.rotation = rotation
@@ -48,8 +50,9 @@ class Point(eu.Point2):
         return (x, y)
 
 
-# class that holds object parameters
 class Object(Point):
+    """Class to hold all parameters associated with object in World Model server"""
+
     def __init__(
         self,
         x: float,
@@ -73,6 +76,13 @@ class Object(Point):
     def get_point(self) -> Point:
         """Return a Point object with same x,y,rotation"""
         return Point(self.x, self.y, self.rotation)
+
+    def set_point(self, p: Point) -> None:
+        """Update Point variables, x,y,rotation in the Object."""
+        """     - Does not send update to World Model REST server"""
+        self.x = p.x
+        self.y = p.y
+        self.rotation = p.rotation
 
     # return circle representing object's radius and current position
     def hitbox(self, margin) -> eu.Circle:
