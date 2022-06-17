@@ -1,4 +1,4 @@
-from glob import glob
+from unicodedata import name
 import defendercommon as dc
 import euclid as eu
 import numpy as np
@@ -7,26 +7,18 @@ import json
 import time
 import math as m
 import sys
-import server_ip_multicast
+
 
 # set some parameters
-# MAX_SPEED = 10  # maximum speed we can move
-# DELTA_T = 0.25  # main loop period
-RETRY_PERIOD = 10  # delay if we're not connecting to server
-GOAL_POINT = dc.Point(295.0, 50.0, 0.0)
-OBJECT_STATE = None
-SENSOR_STATE = None
-OBJECT_STATE_URL = ""
-SENSOR_STATE_URL = ""
+RETRY_PERIOD = 10.0  # delay if we're not connecting to server
 PATH_TO_GOAL: dc.PathSegment = None
-MY_RADIUS: float = 0.0
-S = 0.0  # parametric path independent variable, 0 <= s <= 100.0
+
 
 # rotate a line segment about its p1 through an angle in degrees
 def rotate_segment(cur_pt: dc.Point, nxt_pt: dc.Point, angle_deg: float) -> dc.Point:
     dx = nxt_pt.x - cur_pt.x
     dy = nxt_pt.y - cur_pt.y
-    dr = nxt_pt.rotation_angle - cur_pt.rotation_angle
+    dr = nxt_pt.rotation - cur_pt.rotation
     delta_pt = dc.Point(dx, dy, dr)
     rho, phi = delta_pt.car2pol()
     phi += angle_deg
@@ -34,107 +26,100 @@ def rotate_segment(cur_pt: dc.Point, nxt_pt: dc.Point, angle_deg: float) -> dc.P
     # add the current point back in
     new_x += cur_pt.x
     new_y += cur_pt.y
-    new_r = nxt_pt.rotation_angle
+    new_r = nxt_pt.rotation
     new_point = dc.Point(new_x, new_y, new_r)
     return new_point
 
 
 # return either the next point on pathsegment or evasive course
-def plan_next_point(s: float, myself: dc.Object, sensor_scan: list):
-    global PATH_TO_GOAL, S, MY_RADIUS
-
-    corrective_angle = 10.0
+def plan_next_point(
+    path: dc.PathSegment, path_vars: dc.PathVars, myself: dc.Object, sensor_scan: list
+):
 
     # check for potential collision
     current_point = dc.Point(myself.x, myself.y, myself.rotation)
-    next_point = PATH_TO_GOAL.compute_point(s)
-    for each in sensor_scan:
-        # we want to collide with a target, but not any other object
-        if each.is_target() is False and PATH_TO_GOAL.might_collide(each) is True:
-            # try rotating segment point to avoid collision
-            new_point = rotate_segment(current_point, next_point, corrective_angle)
-            # now must compute new path to goalpoint/target
-            PATH_TO_GOAL = dc.PathSegment(
-                new_point,
-                GOAL_POINT,
-                MY_RADIUS,
-                dc.DEFAULT_DELTA_T,
-                dc.DEFAULT_MAX_SPEED,
-            )
-            # reset path parametric independent variable
-            S = 0.0
-            next_point = new_point
-    return next_point
+    goal_point = dc.Point(path.p2.x, path.p2.y, path.p2.rotation)
+    next_point = path.compute_delta_point(current_point, path_vars)
+    # if there are no obstacles in scan range, continue
+    recompute_path = False
+    if len(sensor_scan) > 0:
+        for each in sensor_scan:
+            # we want to collide with a target, but not any other object
+            if each.type != "target" and path.might_collide(each) is True:
+                # try rotating segment point to avoid collision
+                next_point = rotate_segment(
+                    current_point, next_point, path_vars.delta_path_angle
+                )
+                recompute_path = True
+    return next_point, recompute_path
+
+
+def set_goal_point(wmclient: dc.DriverRestClient) -> dc.Point:
+    """Return a goal point that points to the target"""
+    """ This should be set by some other means, but will do for now"""
+    target = wmclient.get_target()
+    return dc.Point(target.x, target.y, target.rotation)
 
 
 def usage_and_exit(app_name):
-    print(f"{app_name} <object_name> [server IP:port | multicast]")
-    print("<object_name> must be a valid object")
+    print(f"{app_name} <obj_name> [server IP:port | multicast]")
+    print("<obj_name> must be a valid object")
     sys.exit()
 
 
 def main():
-    global PATH_TO_GOAL, MY_RADIUS, S
 
     if len(sys.argv) < 2:
         usage_and_exit(sys.argv[0])
 
-    # get name of object to move around in world-model
-    object_name = sys.argv[1]
-
-    # check for IP or multicast
+    # get name of object to move around in world-model and IP address
+    obj_name = sys.argv[1]
     server_address = dc.DEFAULT_SERVER_ADDRESS  # set default worldserver address
-    if len(sys.argv) == 3:
-        if sys.argv[2] == "multicast":
-            server_address = server_ip_multicast.wait_forever_for_server_address()
-        else:
-            server_address = "http://" + sys.argv[2]
+    if len(sys.argv) >= 3:
+        server_address = "http://" + sys.argv[2]
 
-    # get initial state, initial sensor readings and set object speed
-    state = dc.DriverRestClient(server_address, object_name)
-    obj_url = state.object_state_url
-    sensor_url = state.sensor_state_url
-    print(
-        f"{object_name} driver connecting to {server_address} using full API path {obj_url}"
-    )
-    print(
-        f"{object_name} scanning from {server_address} using full API path {sensor_url}"
-    )
+    # Create rest client (wmclient) to talk to world model server
+    wmclient = dc.DriverRestClient(server_address)
 
-    # Initialize - wait until server becomes available, set initial conditions
-    state.wait_for_server()
-    OBJECT_STATE = state.get_object_state(json_format=True)
-    SENSOR_STATE = state.get_sensor_state(100)
-    OBJECT_STATE = state.set_speed(dc.DEFAULT_MAX_SPEED)
-    MY_RADIUS = float(OBJECT_STATE["radius"])  # use for collision detection
+    # Wait until World Model REST server becomes available
+    wmclient.wait_for_server()
 
-    # create a path that goes directly to the goal point
-    current_point = dc.Point(
-        OBJECT_STATE["x"], OBJECT_STATE["y"], OBJECT_STATE["rotation"]
-    )
-    goal_point = GOAL_POINT
-    PATH_TO_GOAL = dc.PathSegment(
-        current_point,
-        goal_point,
-        MY_RADIUS,
-        dc.DEFAULT_DELTA_T,
-        dc.DEFAULT_MAX_SPEED,
-    )
+    # Get the object and sensor state of the object we're controlling (an attacker)
+    wmclient.set_speed(obj_name, dc.DEFAULT_MAX_SPEED)
+    obj = wmclient.get_named_object(obj_name)  # this is the object we're controlling
+    sensors = wmclient.get_sensors(obj_name, 100)  # the obstacles it can see
+
+    # create a path segment between current point and goal point
+    goal = set_goal_point(wmclient)
+    path_vars = dc.PathVars(dc.DEFAULT_DELTA_T, dc.DEFAULT_MAX_SPEED)
+    path = dc.PathSegment(obj, goal)
+
+    # set path variables. delta_t and speed must be set first
+    path_vars = path.compute_path_vars(path_vars)
+    path_vars.delta_path_angle = 30.0  # currently used in obstacle avoidance
 
     # loop while object isn't dead or out of bounds
     while True:
-        obj_state = state.get_object_state(json_format=True)
-        obj = state.get_object()
+        obj = wmclient.get_named_object(obj_name)
 
-        if obj_state:
-            sensor_scan = state.get_sensor_state(dc.DEFAULT_SCANRANGE)
-            S += dc.DEFAULT_DELTA_T
-            next_point = plan_next_point(S, obj, sensor_scan)
-            state.set_point(next_point)
+        if obj:
+            sensors = wmclient.get_sensors(obj_name, dc.DEFAULT_SCANRANGE)
+            path_vars.increment_tick()
+
+            # compute next point
+            next_point, recompute_path = plan_next_point(path, path_vars, obj, sensors)
+            obj.x = next_point.x
+            obj.y = next_point.y
+            obj.rotation = next_point.rotation
+            wmclient.set_named_object(obj)
+
+            if recompute_path is True:
+                path = dc.PathSegment(obj, goal)
+                path_vars = path.compute_path_vars(path_vars)
 
             # execute_plan(path)
-            state.exit_if_outofbounds()
-            state.exit_if_dead()
+            # wmclient.exit_if_outofbounds()
+            wmclient.exit_if_dead(obj_name)
 
         time.sleep(dc.DEFAULT_DELTA_T)
 
