@@ -9,8 +9,8 @@ import math as m
 import sys
 
 RETRY_PERIOD = 10.0  # delay if we're not connecting to server
-CLOCK_TICK = 0.05
-MY_SPEED = 50
+CLOCK_TICK = 0.01
+EVASIVE_PATH_ANGLE = 30.0  # used when computing simple obstacle avoidance
 
 
 # rotate a line segment about its p1 through an angle in degrees
@@ -57,7 +57,7 @@ def plan_next_point_with_avoidance(
             if each.type != "target" and path.might_collide(each) is True:
                 # try rotating segment point to avoid collision
                 next_point = rotate_segment(
-                    current_point, next_point, path_vars.delta_path_angle
+                    current_point, next_point, path_vars.evasive_path_angle
                 )
                 recompute_path = True
     return next_point, recompute_path
@@ -120,9 +120,7 @@ def main():
 
     # path_vars holds parameters for computing points in a path
     # TODO: try and make this more elegant
-    path_vars = dc.PathVars(CLOCK_TICK, MY_SPEED)
-    path_vars.delta_path_angle = 30.0  # only used in obstacle avoidance
-    path_vars = path.compute_path_vars(path_vars)
+    path_vars = dc.PathVars(CLOCK_TICK, obj.speed, EVASIVE_PATH_ANGLE)
 
     #########################################################
     #  Loop while our object is active

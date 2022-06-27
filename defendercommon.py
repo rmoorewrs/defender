@@ -13,7 +13,6 @@ import sys
 
 
 # set some constants
-DEFAULT_MAX_SPEED = 20  # maximum speed we can move
 DEFAULT_DELTA_T = 0.1  # main loop period
 DEFAULT_HITBOX_MARGIN = 12.0
 DEFAULT_SCANRANGE = 50
@@ -117,22 +116,16 @@ class PathVars:
         self,
         delta_t: float,
         speed: float,
-        delta_hypot: float = 0.0,
-        delta_rotation: float = 0.0,
-        delta_path_angle: float = 0.0,
+        evasive_path_angle: float = 0.0,
     ) -> None:
 
         self.delta_t: float = delta_t  # length of tick in seconds
         self.speed: float = speed  # speed of object
-        self.delta_hypot: float = delta_hypot  # distance along line per tick
-        self.delta_rotation: float = (
-            delta_rotation  # change in object rotation per tick
-        )
-        self.delta_path_angle: float = (
-            delta_path_angle  # default delta angle to use when avoiding obstacle
+        self.delta_hypot: float = delta_t * speed  # distance along line per tick
+        self.evasive_path_angle: float = (
+            evasive_path_angle  # default delta angle to use when avoiding obstacle
         )
         self.s: float = 0.0  # time or parametric independent variable
-        self.n: float = 0.0  # number of ticks in path based on length, speed, tick
 
     def increment_tick(self) -> None:
         self.s += self.delta_t
@@ -188,23 +181,7 @@ class PathSegment:
 
     def distance_per_tick(self, delta_t: float, speed: float) -> float:
         """compute distance per tick based on speed and update rate"""
-        if speed == 0.0:
-            return m.inf
-        else:
-            return delta_t * self.length / speed
-
-    def compute_path_vars(self, path_vars) -> PathVars:
-        """compute path variables based on path length, speed, etc"""
-        if path_vars.delta_t == 0.0 or path_vars.speed == 0.0:
-            print("compute_path_vars() delta_t and speed must be set")
-            return None
-        # compute distance along line per tick (delta_t)
-        path_vars.delta_hypot = path_vars.delta_t * self.length / path_vars.speed
-        # compute number of ticks to travel line at speed
-        path_vars.n = self.length / (path_vars.speed * path_vars.delta_t)
-        # compute object rotation increment per tick
-        path_vars.delta_rotation = self.delta_rotation / path_vars.n
-        return path_vars
+        return delta_t * speed
 
     # compute point that is s percent alont the segment
     # s=0.0 returns p1, s=100.0 returns p2
@@ -229,7 +206,7 @@ class PathSegment:
             return None
 
         p = Point(0.0, 0.0, 0.0)
-        p.rotation = cur_point.rotation + path_vars.delta_rotation
+        # p.rotation = cur_point.rotation + path_vars.delta_rotation
         if self.type == "vertical":
             p.x = cur_point.x
             p.y += path_vars.delta_hypot
