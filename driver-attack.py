@@ -130,8 +130,8 @@ def main():
         obj = wmclient.get_named_object(obj_name)
 
         # PATH PLANNING
-        path_planning = "obstacle_avoidance"
-        # path_planning = "simple"
+        # path_planning = "obstacle_avoidance"
+        path_planning = "simple"
         if obj:
             path_vars.increment_tick()  # increment clock
             if path_planning == "obstacle_avoidance":
