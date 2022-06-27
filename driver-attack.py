@@ -71,8 +71,10 @@ def set_goal_point(wmclient: dc.DriverRestClient) -> dc.Point:
 
 
 def usage_and_exit(app_name):
-    print(f"{app_name} <obj_name> [server IP:port | multicast]")
-    print("<obj_name> must be a valid object")
+    print(f"{app_name} <config_filename> server IP:port [simple | avoid]")
+    print("- <config_filename> is the name of a json config file")
+    print("- server address must be a string like 'localhost:5000'")
+    print("- path planning must either be 'simple' or 'avoid'")
     sys.exit()
 
 
@@ -90,6 +92,15 @@ def main():
     server_address = dc.DEFAULT_SERVER_ADDRESS  # set default worldserver address
     if len(sys.argv) >= 3:
         server_address = "http://" + sys.argv[2]
+
+    # set path planning method
+    path_planning = "simple"
+    if len(sys.argv) >= 4:
+        if sys.argv[3] == "simple" or sys.argv[3] == "avoid":
+            path_planning = sys.argv[3]
+        else:
+            usage_and_exit(sys.argv[0])
+    print(f"Path Planning Strategy: {path_planning}")
 
     # Create rest client (wmclient) to talk to world model server and wait until client connects
     wmclient = dc.DriverRestClient(server_address)
@@ -130,11 +141,9 @@ def main():
         obj = wmclient.get_named_object(obj_name)
 
         # PATH PLANNING
-        # path_planning = "obstacle_avoidance"
-        path_planning = "simple"
         if obj:
             path_vars.increment_tick()  # increment clock
-            if path_planning == "obstacle_avoidance":
+            if path_planning == "avoid":
                 recompute_path = False
                 sensors = wmclient.get_sensors(
                     obj_name, dc.DEFAULT_SCANRANGE
