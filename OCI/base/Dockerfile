@@ -8,7 +8,7 @@ ENV PS1=\h:base-\w$
 EXPOSE 5000-5010
 
 RUN dnf -y install python3 python3-pip git curl sudo vim locale-base-en-us 
-RUN pip3 install flask flask_restful flask_cors requests
+RUN pip3 install flask flask_restful flask_cors requests numpy euclid
 RUN groupadd -g ${GID} wruser
 RUN useradd -m -u ${UID} -g wruser wruser
 RUN usermod -aG sudo wruser
