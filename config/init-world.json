@@ -1,0 +1,79 @@
+[
+    {
+        "id": "23933932-2fc1-4c66-bf12-24a689ad1308",
+        "name": "target01",
+        "type": "target",
+        "x": 295.0,
+        "y": 50.0,
+        "radius": 6.0,
+        "rotation": 0.0,
+        "speed": 0.0,
+        "state": "active"
+    },
+    {
+        "id": "d1fcc686-6f49-450e-b772-ef1be8597aa2",
+        "name": "obstacle01",
+        "type": "obstacle",
+        "x": 295.0,
+        "y": 150.0,
+        "radius": 3.0,
+        "rotation": 0.0,
+        "speed": 0.0,
+        "state": "active"
+    },
+    {
+        "id": "d1fcc686-6f49-450e-b772-ef1be8597aa3",
+        "name": "obstacle02",
+        "type": "obstacle",
+        "x": 120.0,
+        "y": 190.0,
+        "radius": 4.0,
+        "rotation": 0.0,
+        "speed": 0.0,
+        "state": "active"
+    },
+    {
+        "id": "d1fcc686-6f49-450e-b772-ef1be8597aa4",
+        "name": "obstacle03",
+        "type": "obstacle",
+        "x": 220.0,
+        "y": 190.0,
+        "radius": 2.0,
+        "rotation": 0.0,
+        "speed": 0.0,
+        "state": "active"
+    },
+    {
+        "id": "d1fcc686-6f49-450e-b772-ef1be8597aa5",
+        "name": "obstacle04",
+        "type": "obstacle",
+        "x": 320.0,
+        "y": 220.0,
+        "radius": 2.0,
+        "rotation": 0.0,
+        "speed": 0.0,
+        "state": "active"
+    },
+    {
+        "id": "c23fb688-2864-499c-9b90-8be6acc6d99e",
+        "name": "obstacle05",
+        "type": "obstacle",
+        "x": 200.0,
+        "y": 500.0,
+        "radius": 4.0,
+        "rotation": 0.0,
+        "speed": 0.0,
+        "state": "active"
+    },
+    {
+        "id": "9edf30dd-c651-4140-8d45-31db0a68d779",
+        "name": "obstacle06",
+        "type": "obstacle",
+        "x": 300.0,
+        "y": 600.0,
+        "radius": 3.0,
+        "rotation": 35.0,
+        "speed": 0.0,
+        "state": "active"
+    }
+]

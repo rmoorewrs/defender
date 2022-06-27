@@ -1,0 +1,11 @@
+{
+    "id": "6a56732f-6858-401d-ad6d-b0f7ecdc8f58",
+    "name": "defender03",
+    "type": "defender",
+    "x": 350.0,
+    "y": 300.0,
+    "radius": 3.0,
+    "rotation": 180.0,
+    "speed": 50.0,
+    "state": "active"
+}

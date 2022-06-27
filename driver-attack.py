@@ -1,3 +1,4 @@
+from distutils.command.config import config
 import defendercommon as dc
 import euclid as eu
 import numpy as np
@@ -9,7 +10,7 @@ import sys
 
 RETRY_PERIOD = 10.0  # delay if we're not connecting to server
 CLOCK_TICK = 0.05
-MY_SPEED = 25
+MY_SPEED = 50
 
 
 # rotate a line segment about its p1 through an angle in degrees
@@ -77,42 +78,62 @@ def usage_and_exit(app_name):
 
 def main():
 
+    #########################################################
+    #  Initialization
+    #########################################################
     if len(sys.argv) < 2:
         usage_and_exit(sys.argv[0])
 
     # get name of object to move around in world-model and IP address
-    obj_name = sys.argv[1]
+    config_filename = sys.argv[1]
+
     server_address = dc.DEFAULT_SERVER_ADDRESS  # set default worldserver address
     if len(sys.argv) >= 3:
         server_address = "http://" + sys.argv[2]
 
-    # Create rest client (wmclient) to talk to world model server
+    # Create rest client (wmclient) to talk to world model server and wait until client connects
     wmclient = dc.DriverRestClient(server_address)
-
-    # Wait until World Model REST server becomes available
     wmclient.wait_for_server()
 
-    # Get the object and sensor state of the object we're controlling (an attacker)
-    wmclient.set_speed(obj_name, MY_SPEED)
-    obj = wmclient.get_named_object(obj_name)  # this is the object we're controlling
+    # read config file and instatiate object in the world server
+    obj = dc.read_config_from_file(config_filename)
+    obj_name = obj.name
+    # named object may already exist. If so, delete and try again
+    success = False
+    while success == False:
+        r = wmclient.create_new_object(obj)
+        if r.status_code == 200:
+            success = True
+            print(f"Created {obj_name} from {config_filename} in REST server")
+        elif r.status_code == 409:
+            print(f"{obj_name} already exists, trying to delete")
+            r = wmclient.delete_named_object(obj_name)
+        else:
+            print(f"unknown error trying to create {obj_name}")
+
+    # Get the sensor state of the object we're controlling (an attacker)
     sensors = wmclient.get_sensors(obj_name, 100)  # the obstacles it can see
 
     # create a path segment between current point and goal point
-    goal = set_goal_point(wmclient)
+    goal = set_goal_point(wmclient)  # goal point is x,y of target
+    path = dc.PathSegment(obj, goal)  # heading straight for target
+
+    # path_vars holds parameters for computing points in a path
+    # TODO: try and make this more elegant
     path_vars = dc.PathVars(CLOCK_TICK, MY_SPEED)
-    path = dc.PathSegment(obj, goal)
-
-    # set path variables. delta_t and speed must be set first
-    path_vars = path.compute_path_vars(path_vars)
     path_vars.delta_path_angle = 30.0  # only used in obstacle avoidance
+    path_vars = path.compute_path_vars(path_vars)
 
-    # loop while object isn't dead
+    #########################################################
+    #  Loop while our object is active
+    #########################################################
     while True:
-        # get current position/state
+        # always start with current position/state from the wmclient
         obj = wmclient.get_named_object(obj_name)
 
-        # path_planning = "obstacle_avoidance"
-        path_planning = "simple"
+        # PATH PLANNING
+        path_planning = "obstacle_avoidance"
+        # path_planning = "simple"
         if obj:
             path_vars.increment_tick()  # increment clock
             if path_planning == "obstacle_avoidance":

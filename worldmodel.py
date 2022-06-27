@@ -38,7 +38,7 @@ from flask_cors import CORS
 #       $ curl -d 'x=31&y=11' -X PUT http://localhost:5000/v1/objects/name/defender02
 #
 #       delete an object with DELETE
-#       $ curl -X DELETE http://127.0.0.1:5000/v1/objects/6
+#       $ curl -X DELETE http://127.0.0.1:5000/v1/objects/name/attacker01
 #
 #       reset the world model back to contents of init-world.json
 #       $ curl http://localhost:5000/v1/commands/reset -X POST
@@ -51,6 +51,7 @@ from flask_cors import CORS
 
 
 # Some defaults
+DEFAULT_CONFIG_FILE = "config/init-world.json"
 
 
 # set up RESTful API app
@@ -116,11 +117,11 @@ class WorldObject:
 
 
 class WorldObjectList:
-    def __init__(self, filename: str = "init-world.json") -> None:
+    def __init__(self, filename: str = DEFAULT_CONFIG_FILE) -> None:
         self.object_list = []
         self.read_config_from_file(filename)
 
-    def read_config_from_file(self, filename: str = "init-world.json"):
+    def read_config_from_file(self, filename: str = DEFAULT_CONFIG_FILE):
         with open(filename) as file:
             config_dict = json.load(file)
             if config_dict:
@@ -189,7 +190,7 @@ class WorldObjectList:
 
 
 # Create global list of objects in the world -- REST API instances will reference this
-GLOBAL_OBJECT_LIST = WorldObjectList("init-world.json")
+GLOBAL_OBJECT_LIST = WorldObjectList(DEFAULT_CONFIG_FILE)
 
 ##########################################
 # Resource class for world map parameters
@@ -488,7 +489,7 @@ class ManagementCommands(Resource):
         global GLOBAL_OBJECT_LIST
         args = cmd_parser.parse_args()
         if command == "reset":
-            GLOBAL_OBJECT_LIST = WorldObjectList("init-world.json")
+            GLOBAL_OBJECT_LIST = WorldObjectList(DEFAULT_CONFIG_FILE)
             return {"reset": "True"}, 200
         elif command == "dump":
             with open(args["filename"], "w") as file:

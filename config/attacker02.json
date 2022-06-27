@@ -1,0 +1,11 @@
+{
+    "id": "10460db0-fd3c-4a63-8f6f-6ca7a5766d56",
+    "name": "attacker02",
+    "type": "attacker",
+    "x": 300.0,
+    "y": 700.0,
+    "radius": 3.0,
+    "rotation": 0.0,
+    "speed": 50.0,
+    "state": "active"
+}

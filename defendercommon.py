@@ -256,23 +256,48 @@ class DriverRestClient:
         self.sensors_url = server_address + self.SENSOR_API_PATH
         return
 
+    # create a new object on the Rest Server
+    def create_new_object(self, new_obj):
+        """Create a new object on the World Model REST server"""
+        url = self.object_by_name_url + new_obj.name
+        json_data = new_obj.jsonify()
+        try:
+            r = req.post(url, data=json_data)
+            return r
+        except req.exceptions.req.RequestException:
+            print(f"failed to connect to server {self.object_by_name_url}")
+            print(f"")
+
+    def delete_named_object(self, obj_name):
+        """Delete an object from the World Model REST server"""
+        url = self.object_by_name_url + obj_name
+        try:
+            r = req.delete(url)
+            return r
+        except req.exceptions.req.RequestException:
+            print(f"failed to connect to server {self.object_by_name_url}")
+            print(f"")
+
     # new functions, trying to make DriverRestClient more logical
     def get_named_object(self, name: str) -> Object:
         """Return an Object containing the state of the named object"""
         try:
             rsp = req.get(self.object_by_name_url + name)
             obj_state = json.loads(rsp.text)
-            return Object(
-                float(obj_state["x"]),
-                float(obj_state["y"]),
-                float(obj_state["rotation"]),
-                float(obj_state["radius"]),
-                float(obj_state["speed"]),
-                obj_state["type"],
-                obj_state["name"],
-                obj_state["state"],
-                obj_state["id"],
-            )
+            if obj_state is not None:
+                return Object(
+                    float(obj_state["x"]),
+                    float(obj_state["y"]),
+                    float(obj_state["rotation"]),
+                    float(obj_state["radius"]),
+                    float(obj_state["speed"]),
+                    obj_state["type"],
+                    obj_state["name"],
+                    obj_state["state"],
+                    obj_state["id"],
+                )
+            else:
+                return None
         except req.exceptions.RequestException:
             print(f"failed to connect to server {self.object_by_name_url}")
             return None
@@ -402,3 +427,20 @@ class DriverRestClient:
             sys.exit({"status": "Object is Dead"})
         else:
             return None
+
+
+def read_config_from_file(filename: str = "config/object.json") -> Object:
+    """Read a config file and return contents as an Object"""
+    with open(filename) as file:
+        obj_state = json.load(file)
+        return Object(
+            float(obj_state["x"]),
+            float(obj_state["y"]),
+            float(obj_state["rotation"]),
+            float(obj_state["radius"]),
+            float(obj_state["speed"]),
+            obj_state["type"],
+            obj_state["name"],
+            obj_state["state"],
+            obj_state["id"],
+        )
