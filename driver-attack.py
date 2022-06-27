@@ -9,7 +9,7 @@ import math as m
 import sys
 
 RETRY_PERIOD = 10.0  # delay if we're not connecting to server
-CLOCK_TICK = 0.01
+CLOCK_TICK = 0.03
 EVASIVE_PATH_ANGLE = 30.0  # used when computing simple obstacle avoidance
 
 
