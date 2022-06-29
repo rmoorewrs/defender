@@ -1,5 +1,5 @@
 """
-Common classes used by defender programs
+Common classes used by driver programs
 """
 import math as m
 from tkinter import N
@@ -203,7 +203,7 @@ class PathSegment:
     def compute_delta_point(self, cur_point: Point, path_vars: PathVars) -> Point:
         """compute next point based on current point and delta distance along line"""
         if path_vars.delta_hypot == 0.0:
-            return None
+            return cur_point
 
         p = Point(0.0, 0.0, 0.0)
         # p.rotation = cur_point.rotation + path_vars.delta_rotation
