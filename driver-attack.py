@@ -1,5 +1,4 @@
-from distutils.command.config import config
-import defendercommon as dc
+import drivercommon as dc
 import euclid as eu
 import numpy as np
 import requests as req
