@@ -10,23 +10,10 @@ import sys
 RETRY_PERIOD = 10.0  # delay if we're not connecting to server
 CLOCK_TICK = 0.03
 EVASIVE_PATH_ANGLE = 30.0  # used when computing simple obstacle avoidance
-
-
-# rotate a line segment about its p1 through an angle in degrees
-def rotate_segment(cur_pt: dc.Point, nxt_pt: dc.Point, angle_deg: float) -> dc.Point:
-    dx = nxt_pt.x - cur_pt.x
-    dy = nxt_pt.y - cur_pt.y
-    dr = nxt_pt.rotation - cur_pt.rotation
-    delta_pt = dc.Point(dx, dy, dr)
-    rho, phi = delta_pt.car2pol()
-    phi += angle_deg
-    new_x, new_y = delta_pt.pol2car(rho, phi)
-    # add the current point back in
-    new_x += cur_pt.x
-    new_y += cur_pt.y
-    new_r = nxt_pt.rotation
-    new_point = dc.Point(new_x, new_y, new_r)
-    return new_point
+RIGHT_LIMIT = 500.0
+LEFT_LIMIT = 0.0
+RIGHT_TRAVEL = 90.0
+LEFT_TRAVEL = 270.0
 
 
 def plan_next_point_simple(
@@ -37,29 +24,6 @@ def plan_next_point_simple(
     current_point = dc.Point(myself.x, myself.y, myself.rotation)
     next_point = path.compute_delta_point(current_point, path_vars)
     return next_point
-
-
-# return either the next point on pathsegment or evasive course
-def plan_next_point_with_avoidance(
-    path: dc.PathSegment, path_vars: dc.PathVars, myself: dc.Object, sensor_scan: list
-):
-
-    # check for potential collision
-    current_point = dc.Point(myself.x, myself.y, myself.rotation)
-    goal_point = dc.Point(path.p2.x, path.p2.y, path.p2.rotation)
-    next_point = path.compute_delta_point(current_point, path_vars)
-    # if there are no obstacles in scan range, continue
-    recompute_path = False
-    if len(sensor_scan) > 0:
-        for each in sensor_scan:
-            # we want to collide with a target, but not any other object
-            if each.type != "target" and path.might_collide(each) is True:
-                # try rotating segment point to avoid collision
-                next_point = rotate_segment(
-                    current_point, next_point, path_vars.evasive_path_angle
-                )
-                recompute_path = True
-    return next_point, recompute_path
 
 
 def set_goal_point(wmclient: dc.DriverRestClient) -> dc.Point:
@@ -73,7 +37,6 @@ def usage_and_exit(app_name):
     print(f"{app_name} <config_filename> server IP:port [simple | avoid]")
     print("- <config_filename> is the name of a json config file")
     print("- server address must be a string like 'localhost:5000'")
-    print("- path planning must either be 'simple' or 'avoid'")
     sys.exit()
 
 
@@ -85,52 +48,38 @@ def main():
     if len(sys.argv) < 2:
         usage_and_exit(sys.argv[0])
 
-    # get name of object to move around in world-model and IP address
+    # get name of object config file and IP address
     config_filename = sys.argv[1]
 
     server_address = dc.DEFAULT_SERVER_ADDRESS  # set default worldserver address
     if len(sys.argv) >= 3:
         server_address = "http://" + sys.argv[2]
 
-    # set path planning method
-    path_planning = "simple"
-    if len(sys.argv) >= 4:
-        if sys.argv[3] == "simple" or sys.argv[3] == "avoid":
-            path_planning = sys.argv[3]
-        else:
-            usage_and_exit(sys.argv[0])
-    print(f"Path Planning Strategy: {path_planning}")
-
     # Create rest client (wmclient) to talk to world model server and wait until client connects
     wmclient = dc.DriverRestClient(server_address)
     wmclient.wait_for_server()
 
-    # read config file and instatiate object in the world server
-    obj = dc.read_config_from_file(config_filename)
+    obj = dc.instantiate_object_in_world(wmclient, config_filename)
     obj_name = obj.name
-    # named object may already exist. If so, delete and try again
-    success = False
-    while success == False:
-        r = wmclient.create_new_object(obj)
-        if r.status_code == 200:
-            success = True
-            print(f"Created {obj_name} from {config_filename} in REST server")
-        elif r.status_code == 409:
-            print(f"{obj_name} already exists, trying to delete")
-            r = wmclient.delete_named_object(obj_name)
-        else:
-            print(f"unknown error trying to create {obj_name}")
 
     # Get the sensor state of the object we're controlling (an attacker)
-    sensors = wmclient.get_sensors(obj_name, 100)  # the obstacles it can see
+    # sensors = wmclient.get_sensors(obj_name, 100)  # the obstacles it can see
 
-    # create a path segment between current point and goal point
-    goal = set_goal_point(wmclient)  # goal point is x,y of target
-    path = dc.PathSegment(obj, goal)  # heading straight for target
+    # must move back and forth between 2 points along horizontal line
+    left_goal = dc.Point(LEFT_LIMIT + 10.0, obj.y, LEFT_TRAVEL)
+    right_goal = dc.Point(RIGHT_LIMIT - 10.0, obj.y, RIGHT_TRAVEL)
+
+    # are we starting to the left or right?
+    direction = RIGHT_TRAVEL
+    if obj.x - LEFT_LIMIT < RIGHT_LIMIT - obj.x:
+        direction = RIGHT_TRAVEL  # we're to the left
+        path = dc.PathSegment(obj, right_goal)
+    elif obj.x - LEFT_LIMIT > RIGHT_LIMIT - obj.x:
+        direction = LEFT_TRAVEL  # we're to the right
+        path = dc.PathSegment(obj, left_goal)
 
     # path_vars holds parameters for computing points in a path
-    # TODO: try and make this more elegant
-    path_vars = dc.PathVars(CLOCK_TICK, obj.speed, EVASIVE_PATH_ANGLE)
+    path_vars = dc.PathVars(CLOCK_TICK, obj.speed, 0)
 
     #########################################################
     #  Loop while our object is active
@@ -142,27 +91,23 @@ def main():
         # PATH PLANNING
         if obj:
             path_vars.increment_tick()  # increment clock
-            if path_planning == "avoid":
-                recompute_path = False
-                sensors = wmclient.get_sensors(
-                    obj_name, dc.DEFAULT_SCANRANGE
-                )  # read sensors
-
-                # compute next point, flag path for recompute if obstacle avoided
-                next_point, recompute_path = plan_next_point_with_avoidance(
-                    path, path_vars, obj, sensors
-                )
-                obj.set_point(next_point)  # update current object with next point
-                if recompute_path is True:
-                    path = dc.PathSegment(obj, goal)  # adjust path due to avoidance
-
-            elif path_planning == "simple":
-                next_point = plan_next_point_simple(path, path_vars, obj)
-                obj.set_point(next_point)  # update current object with next point
+            next_point = plan_next_point_simple(path, path_vars, obj)
+            obj.set_point(next_point)  # update current object with next point
 
             # move to computed next point
             wmclient.set_named_object(obj)  # send updated object to world model server
             wmclient.exit_if_dead(obj_name)
+
+        # check to see if we've reached goal
+        if path.is_segment_complete(obj) is True:
+            # are we at right or left goal?
+            if obj.x >= right_goal.x:
+                obj.rotation = LEFT_TRAVEL
+                path = dc.PathSegment(obj, left_goal)
+            else:
+                path = dc.PathSegment(obj, right_goal)
+                obj.rotation = RIGHT_TRAVEL
+            wmclient.set_named_object(obj)
 
         time.sleep(CLOCK_TICK)
 

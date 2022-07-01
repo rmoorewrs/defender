@@ -174,7 +174,7 @@ class PathSegment:
         return False
 
     def is_segment_complete(self, p: Point) -> bool:
-        if p.x == self.pt2.x and p.y == self.pt2.y and p.rotation == self.pt2.rotation:
+        if m.hypot(p.x - self.p1.x, p.y - self.p1.y) >= self.length:
             return True
         else:
             return False
@@ -205,7 +205,7 @@ class PathSegment:
         if path_vars.delta_hypot == 0.0:
             return cur_point
 
-        p = Point(0.0, 0.0, 0.0)
+        p = Point(0.0, 0.0, cur_point.rotation)
         # p.rotation = cur_point.rotation + path_vars.delta_rotation
         if self.type == "vertical":
             p.x = cur_point.x
@@ -406,6 +406,23 @@ class DriverRestClient:
             return None
 
 
+def rotate_segment(cur_pt: Point, nxt_pt: Point, angle_deg: float) -> Point:
+    """rotate a line segment about its p1 through an angle in degrees"""
+    dx = nxt_pt.x - cur_pt.x
+    dy = nxt_pt.y - cur_pt.y
+    dr = nxt_pt.rotation - cur_pt.rotation
+    delta_pt = Point(dx, dy, dr)
+    rho, phi = delta_pt.car2pol()
+    phi += angle_deg
+    new_x, new_y = delta_pt.pol2car(rho, phi)
+    # add the current point back in
+    new_x += cur_pt.x
+    new_y += cur_pt.y
+    new_r = nxt_pt.rotation
+    new_point = Point(new_x, new_y, new_r)
+    return new_point
+
+
 def read_config_from_file(filename: str = "config/object.json") -> Object:
     """Read a config file and return contents as an Object"""
     with open(filename) as file:
@@ -421,3 +438,23 @@ def read_config_from_file(filename: str = "config/object.json") -> Object:
             obj_state["state"],
             obj_state["id"],
         )
+
+
+def instantiate_object_in_world(wmclient: DriverRestClient, config_filename) -> Object:
+    """Read config file and instantiate new object on world server"""
+    # read config file and instatiate object in the world server
+    obj = read_config_from_file(config_filename)
+
+    success = False
+    while success == False:
+        r = wmclient.create_new_object(obj)
+        if r.status_code == 200:
+            success = True
+            print(f"Created {obj.name} from {config_filename} in REST server")
+        elif r.status_code == 409:
+            print(f"{obj.name} already exists, trying to delete")
+            r = wmclient.delete_named_object(obj.name)
+        else:
+            print(f"unknown error trying to create {obj.name}")
+
+    return obj
