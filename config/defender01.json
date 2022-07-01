@@ -6,6 +6,6 @@
     "y": 300.0,
     "radius": 3.0,
     "rotation": 90.0,
-    "speed": 20.0,
+    "speed": 30.0,
     "state": "active"
 }
