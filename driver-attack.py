@@ -12,23 +12,6 @@ CLOCK_TICK = 0.03
 EVASIVE_PATH_ANGLE = 30.0  # used when computing simple obstacle avoidance
 
 
-# rotate a line segment about its p1 through an angle in degrees
-def rotate_segment(cur_pt: dc.Point, nxt_pt: dc.Point, angle_deg: float) -> dc.Point:
-    dx = nxt_pt.x - cur_pt.x
-    dy = nxt_pt.y - cur_pt.y
-    dr = nxt_pt.rotation - cur_pt.rotation
-    delta_pt = dc.Point(dx, dy, dr)
-    rho, phi = delta_pt.car2pol()
-    phi += angle_deg
-    new_x, new_y = delta_pt.pol2car(rho, phi)
-    # add the current point back in
-    new_x += cur_pt.x
-    new_y += cur_pt.y
-    new_r = nxt_pt.rotation
-    new_point = dc.Point(new_x, new_y, new_r)
-    return new_point
-
-
 def plan_next_point_simple(
     path: dc.PathSegment, path_vars: dc.PathVars, myself: dc.Object
 ):
@@ -55,7 +38,7 @@ def plan_next_point_with_avoidance(
             # we want to collide with a target, but not any other object
             if each.type != "target" and path.might_collide(each) is True:
                 # try rotating segment point to avoid collision
-                next_point = rotate_segment(
+                next_point = dc.rotate_segment(
                     current_point, next_point, path_vars.evasive_path_angle
                 )
                 recompute_path = True
